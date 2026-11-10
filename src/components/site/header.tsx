@@ -39,7 +39,7 @@ export async function SiteHeader() {
               </Link>
             </div>
           )}
-          <MobileNav authed={!!user} />
+          <MobileNav authed={!!user} panelHref={user ? homeFor(user.role) : undefined} />
         </div>
       </div>
     </header>

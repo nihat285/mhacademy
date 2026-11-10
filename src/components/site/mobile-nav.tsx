@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { NAV_ITEMS } from "./nav-items";
 
@@ -29,7 +30,7 @@ export function DesktopNavLinks() {
   );
 }
 
-export function MobileNav({ authed }: { authed: boolean }) {
+export function MobileNav({ authed, panelHref }: { authed: boolean; panelHref?: string }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   // Close the menu on navigation (state adjusted during render, not in an effect).
@@ -56,29 +57,39 @@ export function MobileNav({ authed }: { authed: boolean }) {
       >
         {open ? <X size={22} /> : <Menu size={22} />}
       </button>
-      {open && (
-        <div id="mobile-menu" className="fixed inset-x-0 top-[65px] bottom-0 z-40 overflow-y-auto border-t border-border bg-bg p-5">
-          <ul className="space-y-1">
-            {NAV_ITEMS.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="block rounded-xl px-4 py-3 text-lg font-semibold hover:bg-surface-2">
-                  {item.label}
+      {/* Rendered in a portal: the header has backdrop-blur, which makes it the containing block of
+          `fixed` descendants, so the menu would otherwise be clipped to the 65px header and invisible. */}
+      {open &&
+        createPortal(
+          <div id="mobile-menu" className="fixed inset-x-0 top-[65px] bottom-0 z-40 overflow-y-auto border-t border-border bg-bg p-5">
+            {authed ? (
+              panelHref && (
+                <Link href={panelHref} className="mb-4 block rounded-xl bg-accent py-3 text-center font-semibold text-on-accent">
+                  Panelim
                 </Link>
-              </li>
-            ))}
-          </ul>
-          {!authed && (
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <Link href="/giris" className="rounded-xl border border-border-strong py-3 text-center font-semibold">
-                Giriş
-              </Link>
-              <Link href="/qeydiyyat" className="rounded-xl bg-accent py-3 text-center font-semibold text-on-accent">
-                Qeydiyyat
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
+              )
+            ) : (
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                <Link href="/giris" className="rounded-xl border border-border-strong py-3 text-center font-semibold">
+                  Giriş
+                </Link>
+                <Link href="/qeydiyyat" className="rounded-xl bg-accent py-3 text-center font-semibold text-on-accent">
+                  Qeydiyyat
+                </Link>
+              </div>
+            )}
+            <ul className="space-y-1">
+              {NAV_ITEMS.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="block rounded-xl px-4 py-3 text-lg font-semibold hover:bg-surface-2">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
