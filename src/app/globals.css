@@ -1,0 +1,181 @@
+@import "tailwindcss";
+@import "@fontsource-variable/montserrat";
+
+/* ------------------------------------------------------------------ */
+/*  MH Academy design tokens                                          */
+/*  Deep navy + white + premium gold. Two themes via [data-theme].    */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --navy-950: #0b1220;
+  --navy-900: #0f1830;
+  --navy-800: #12224a;
+  --navy-700: #1a2d54;
+  --navy-600: #274071;
+  --gold-300: #ecd488;
+  --gold-400: #d4af37;
+  --gold-500: #d4af37;
+  --gold-600: #a8861f;
+
+  /* Light theme */
+  --logo-ink: #0b1220;
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --surface-2: #f1eee6;
+  --text: #0b1220;
+  --text-muted: #55607a;
+  --border: #e3dfd3;
+  --border-strong: #cfc9b8;
+  --brand: #0b1220;
+  --on-brand: #ffffff;
+  --accent: #d4af37;
+  --on-accent: #0b1220;
+  --accent-ink: #7a5c15; /* gold used as text — AA on light surfaces */
+  --success: #17794f;
+  --success-bg: #e3f4ec;
+  --danger: #b4281f;
+  --danger-bg: #fbe9e7;
+  --warning: #8a5a00;
+  --warning-bg: #fdf1d8;
+  --info: #1f5fbf;
+  --info-bg: #e6eefb;
+  --ring: #1f5fbf;
+  --shadow-sm: 0 1px 2px rgb(12 23 48 / 0.06), 0 1px 1px rgb(12 23 48 / 0.04);
+  --shadow-md: 0 8px 24px -8px rgb(12 23 48 / 0.16), 0 2px 6px rgb(12 23 48 / 0.06);
+  --shadow-lg: 0 24px 56px -20px rgb(12 23 48 / 0.34);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --logo-ink: #ffffff;
+  --bg: #0b1220;
+  --surface: #111b31;
+  --surface-2: #16223c;
+  --text: #eef1f8;
+  --text-muted: #9aa6c0;
+  --border: #233252;
+  --border-strong: #33466e;
+  --brand: #d4af37;
+  --on-brand: #0b1220;
+  --accent: #d4af37;
+  --on-accent: #0b1220;
+  --accent-ink: #e3c562;
+  --success: #52d19c;
+  --success-bg: #0f2c22;
+  --danger: #ff8d84;
+  --danger-bg: #331412;
+  --warning: #f0c05a;
+  --warning-bg: #33260a;
+  --info: #7fb0ff;
+  --info-bg: #11264a;
+  --ring: #7fb0ff;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 24px 56px -20px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-brand: var(--brand);
+  --color-on-brand: var(--on-brand);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-navy-950: var(--navy-950);
+  --color-navy-900: var(--navy-900);
+  --color-navy-800: var(--navy-800);
+  --color-navy-700: var(--navy-700);
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --font-sans: "Montserrat Variable", "Urbanist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Montserrat Variable", "Urbanist", ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: var(--shadow-sm);
+  --shadow-pop: var(--shadow-md);
+  --shadow-hero: var(--shadow-lg);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+}
+
+::selection { background: var(--gold-400); color: var(--navy-900); }
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+  position: absolute; left: -9999px; top: 8px; z-index: 100;
+  background: var(--brand); color: var(--on-brand); padding: 8px 14px; border-radius: 8px;
+}
+.skip-link:focus { left: 8px; }
+
+/* Subtle entrance animation (disabled for reduced-motion users) */
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@keyframes shimmer { to { background-position: -200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+/* Printable result reports */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+  .print-card { box-shadow: none !important; border: 1px solid #bbb !important; break-inside: avoid; }
+}
+
+/* Lesson / explanation prose */
+.prose-mh p { margin: 0 0 0.9rem; }
+.prose-mh ul { list-style: disc; padding-left: 1.25rem; margin: 0 0 0.9rem; }
+.prose-mh ol { list-style: decimal; padding-left: 1.25rem; margin: 0 0 0.9rem; }
+.prose-mh li { margin: 0.2rem 0; }
+.prose-mh strong { font-weight: 700; }
+.prose-mh table { border-collapse: collapse; width: 100%; margin: 0 0 1rem; font-size: 0.95rem; }
+.prose-mh th, .prose-mh td { border: 1px solid var(--border); padding: 0.45rem 0.7rem; text-align: left; }
+.prose-mh th { background: var(--surface-2); }

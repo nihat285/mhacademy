@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792946659582,
+      "tag": "0000_mushy_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792946762996,
+      "tag": "0001_giant_praxagora",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792946823711,
+      "tag": "0002_quiet_mephisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793612247364,
+      "tag": "0003_admission_scores",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794221557950,
+      "tag": "0004_chat",
+      "breakpoints": true
+    }
+  ]
+}
