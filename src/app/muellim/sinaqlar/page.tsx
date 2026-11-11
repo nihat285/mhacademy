@@ -47,6 +47,7 @@ export default async function TeacherExams() {
                 <Td><Badge tone={STATUS[e.status][1]}>{STATUS[e.status][0]}</Badge></Td>
                 <Td>
                   <div className="flex justify-end gap-2">
+                    <LinkButton href={`/muellim/neticeler/${e.id}`} variant="outline" size="sm">Nəticələr</LinkButton>
                     <LinkButton href={`/muellim/sinaqlar/${e.id}`} variant="outline" size="sm">Redaktə</LinkButton>
                     <ConfirmButton action={deleteExam.bind(null, e.id)} title="Sınaq silinsin?" description="Cəhdi olan sınaqları silmək olmur — onları arxivə göndərin." confirmLabel="Sil">Sil</ConfirmButton>
                   </div>
