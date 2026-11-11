@@ -17,6 +17,7 @@ export const TEACHER_NAV: PanelNavItem[] = [
   { href: "/muellim/dersler", label: "Dərslər", icon: "lessons" },
   { href: "/muellim/suallar", label: "Sual bankı", icon: "questions" },
   { href: "/muellim/sinaqlar", label: "Sınaqlar", icon: "exams" },
+   { href: "/muellim/neticeler", label: "Nəticələr", icon: "results" },
   { href: "/muellim/sinifler", label: "Siniflər", icon: "users" },
   { href: "/muellim/elanlar", label: "Elanlar", icon: "announce" },
   { href: "/muellim/yazisma", label: "Yazışma", icon: "messages" },
