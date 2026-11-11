@@ -1,0 +1,9 @@
+warning: in the working copy of 'drizzle/meta/_journal.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/dev-local.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/import-scores.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/(site)/ixtisas-ballari/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/db/schema.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/queries/admission.ts', LF will be replaced by CRLF the next time Git touches it
+ drizzle/meta/_journal.json | 7 [32m+++++++[m
+ src/db/schema.ts           | 2 [32m++[m
+ 2 files changed, 9 insertions(+)

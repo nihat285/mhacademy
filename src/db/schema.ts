@@ -620,6 +620,8 @@ export const admissionScores = pgTable(
     /** Language section of the publication: "az" or "ru". */
     lang: varchar("lang", { length: 2 }).notNull(),
     university: varchar("university", { length: 240 }).notNull(),
+    /** Position in the official publication (DİM order: universities and specialties as printed). */
+    sortOrder: integer("sort_order").notNull().default(0),
     code: varchar("code", { length: 8 }).notNull(),
     name: varchar("name", { length: 400 }).notNull(),
     /** "full" = əyani, "part" = qiyabi. */
