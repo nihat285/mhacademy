@@ -24,7 +24,8 @@ export async function importScores(year = 2026) {
     await tx.delete(admissionScores).where(eq(admissionScores.year, year));
     for (let i = 0; i < rows.length; i += 200) {
       await tx.insert(admissionScores).values(
-        rows.slice(i, i + 200).map((r) => ({
+        rows.slice(i, i + 200).map((r, j) => ({
+          sortOrder: i + j + 1,
           year: r.year, groupNo: r.group, lang: r.lang, university: r.university, code: r.code, name: r.name, studyForm: r.form,
           special: r.special, scoreText: r.scoreText, stateText: r.stateText, paidOnly: r.paidOnly,
           score: r.score === null ? null : String(r.score), stateScore: r.stateScore === null ? null : String(r.stateScore),

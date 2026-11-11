@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 const SORT_LABEL: Record<AdmissionSort, string> = {
+  pdf: "DİM nəşrindəki sıra (universitetlər üzrə)",
   bal: "Bal: yüksəkdən aşağıya",
   "bal-az": "Bal: aşağıdan yuxarıya",
   ad: "İxtisas adına görə",
@@ -75,7 +76,10 @@ export default async function AdmissionScoresPage({ searchParams }: { searchPara
   const bal = Number.isFinite(balN) && balN >= 0 && balN <= 700 ? balN : undefined;
   const tip = one(sp.tip, 8) === "odenisli" ? "odenisli" : "dovlet";
   const sortRaw = one(sp.sirala, 12) ?? "";
-  const sort: AdmissionSort = (ADMISSION_SORTS as readonly string[]).includes(sortRaw) ? (sortRaw as AdmissionSort) : "bal";
+  // Default: the order of the official DİM publication; once the student enters a score, rank by score instead.
+  const defaultSort: AdmissionSort = bal !== undefined ? "bal" : "pdf";
+  const explicitSort = (ADMISSION_SORTS as readonly string[]).includes(sortRaw) ? (sortRaw as AdmissionSort) : undefined;
+  const sort: AdmissionSort = explicitSort ?? defaultSort;
   const page = Math.min(500, Math.max(1, Number.parseInt(one(sp.page, 6) ?? "1", 10) || 1));
 
   const filters: AdmissionFilters = { q, group, lang, university, form, bal, tip, sort, page };
@@ -84,7 +88,7 @@ export default async function AdmissionScoresPage({ searchParams }: { searchPara
 
   const params = {
     q, qrup: group ? String(group) : undefined, bolme: lang, univ: university, forma: form,
-    bal: bal !== undefined ? String(bal) : undefined, tip: bal !== undefined ? tip : undefined, sirala: sort === "bal" ? undefined : sort,
+    bal: bal !== undefined ? String(bal) : undefined, tip: bal !== undefined ? tip : undefined, sirala: explicitSort,
   };
   const counts = new Map(facets.groups.map((g) => [g.group, g.n]));
 
@@ -132,7 +136,8 @@ export default async function AdmissionScoresPage({ searchParams }: { searchPara
             <option value="dovlet">Dövlət sifarişi üzrə</option>
             <option value="odenisli">Ümumi keçid balı üzrə</option>
           </select>
-          <select name="sirala" defaultValue={sort} aria-label="Sıralama" className={selectClass}>
+          <select name="sirala" defaultValue={explicitSort ?? ""} aria-label="Sıralama" className={selectClass}>
+            <option value="">Standart sıra (DİM nəşri; bal yazanda bal üzrə)</option>
             {ADMISSION_SORTS.map((s) => (
               <option key={s} value={s}>{SORT_LABEL[s]}</option>
             ))}

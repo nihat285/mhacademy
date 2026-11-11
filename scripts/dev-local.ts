@@ -43,7 +43,8 @@ async function main() {
   const scores = await client.query<{ n: number }>("select count(*)::int as n from admission_scores");
   // Re-import whenever the data file and the table disagree (e.g. a new group was added to the JSON).
   const expected = (JSON.parse(readFileSync(path.join(root, "scripts", "data", "admission-scores-2026.json"), "utf8")) as unknown[]).length;
-  const needsScores = scores.rows[0].n !== expected;
+  const unordered = await client.query<{ n: number }>("select count(*)::int as n from admission_scores where sort_order = 0");
+  const needsScores = scores.rows[0].n !== expected || unordered.rows[0].n > 0;
 
   const server = new PGLiteSocketServer({ db: client, port, host: "127.0.0.1", maxConnections: 10 });
   try {

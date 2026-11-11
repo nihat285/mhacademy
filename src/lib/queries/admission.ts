@@ -6,7 +6,7 @@ import { escapeLike } from "./catalog";
 export const ADMISSION_YEAR = 2026;
 export const ADMISSION_PAGE_SIZE = 30;
 export const ADMISSION_GROUPS = [1, 2, 3, 4, 5] as const;
-export const ADMISSION_SORTS = ["bal", "bal-az", "ad", "universitet"] as const;
+export const ADMISSION_SORTS = ["pdf", "bal", "bal-az", "ad", "universitet"] as const;
 export type AdmissionSort = (typeof ADMISSION_SORTS)[number];
 
 export const GROUP_LABEL: Record<number, string> = { 1: "I qrup", 2: "II qrup", 3: "III qrup", 4: "IV qrup", 5: "V qrup" };
@@ -50,7 +50,8 @@ export async function searchAdmissionScores(f: AdmissionFilters) {
   const w = where(f);
   const scoreCol = f.bal !== undefined && f.tip === "dovlet" ? t.stateScore : f.bal !== undefined ? t.score : sql`coalesce(${t.stateScore}, ${t.score})`;
   const order =
-    f.sort === "ad" ? [asc(t.name), asc(t.university)]
+    f.sort === "pdf" ? [asc(t.groupNo), asc(t.lang), asc(t.sortOrder)]
+    : f.sort === "ad" ? [asc(t.name), asc(t.university)]
     : f.sort === "universitet" ? [asc(t.university), asc(t.name)]
     : f.sort === "bal-az" ? [sql`${scoreCol} asc nulls last`, asc(t.name)]
     : [sql`${scoreCol} desc nulls last`, asc(t.name)];
