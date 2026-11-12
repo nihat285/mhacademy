@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -69,17 +69,26 @@ export default async function LessonPage({ params }: Props) {
             )}
             {materials.length > 0 && (
               <section className="mt-8" aria-labelledby="mat-h">
-                <h2 id="mat-h" className="text-2xl font-semibold">Materiallar</h2>
+                <h2 id="mat-h" className="text-2xl font-semibold">Dərs materialları</h2>
                 <ul className="mt-3 space-y-2">
                   {materials.map((m) => {
                     const href = safeFileUrl(m.fileUrl);
-                    return href ? (
-                      <li key={m.id}>
-                        <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-surface-2">
-                          <Download size={16} /> {m.title}
-                        </a>
+                    if (!href) return null;
+                    const size = m.sizeBytes ? (m.sizeBytes >= 1048576 ? `${(m.sizeBytes / 1048576).toFixed(1).replace(".", ",")} MB` : `${Math.max(1, Math.round(m.sizeBytes / 1024))} KB`) : null;
+                    const download = href.includes("blob.vercel-storage.com") ? `${href}${href.includes("?") ? "&" : "?"}download=1` : href;
+                    return (
+                      <li key={m.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+                        <FileText size={20} className="shrink-0 text-accent-ink" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold">{m.title}</p>
+                          <p className="text-xs text-muted">PDF{size ? ` · ${size}` : ""}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface-2">Aç</a>
+                          <a href={download} className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-on-accent hover:opacity-90"><Download size={14} /> Endir</a>
+                        </div>
                       </li>
-                    ) : null;
+                    );
                   })}
                 </ul>
               </section>

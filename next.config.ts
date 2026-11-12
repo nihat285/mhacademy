@@ -16,7 +16,7 @@ const csp = [
   "font-src 'self' data:",
   "media-src 'self' https:",
   "frame-src https://www.youtube-nocookie.com https://player.vimeo.com",
-  `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
+  `connect-src 'self' https://vercel.com https://blob.vercel-storage.com https://*.public.blob.vercel-storage.com${isDev ? " ws: wss:" : ""}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
