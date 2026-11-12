@@ -16,7 +16,7 @@ export default async function NewLesson() {
   return (
     <>
       <PageHeader title="Yeni dərs" />
-      <div className="max-w-3xl"><LessonForm action={createLesson} data={data} submitLabel="Dərsi yarat" /></div>
+      <div className="max-w-3xl"><LessonForm action={createLesson} data={data} submitLabel="Dərsi yarat" pendingMaterials={{ enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN) }} /></div>
     </>
   );
 }

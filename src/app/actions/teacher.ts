@@ -14,6 +14,7 @@ import {
   examAttempts,
   examQuestions,
   exams,
+  lessonMaterials,
   lessons,
   notifications,
   questionOptions,
@@ -27,6 +28,7 @@ import type { CurrentUser } from "@/lib/session";
 import type { Permission } from "@/lib/permissions";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveVideo } from "@/components/catalog/video-source";
+import { parseMaterialInputs } from "@/lib/lesson-materials";
 import { isSafeHttpsUrl } from "@/lib/safe-url";
 import { slugify } from "@/lib/slug";
 import { fieldErrors, formValues } from "@/lib/validation";
@@ -168,6 +170,8 @@ export async function createLesson(_p: Res, fd: FormData): Promise<Res> {
   if (isRes(u)) return u;
   const r = parseLesson(fd);
   if ("error" in r) return r.error as Res;
+  const mats = parseMaterialInputs(fd);
+  if ("error" in mats) return fail(mats.error, fd);
   const slug = await uniqueSlug(lessons, lessons.slug, r.d.title);
   const [row] = await db
     .insert(lessons)
@@ -185,7 +189,10 @@ export async function createLesson(_p: Res, fd: FormData): Promise<Res> {
       published: r.published,
     })
     .returning({ id: lessons.id });
-  await audit(u.id, "lesson.create", "lesson", row.id);
+  if (mats.items.length > 0) {
+    await db.insert(lessonMaterials).values(mats.items.map((m) => ({ lessonId: row.id, title: m.title, fileUrl: m.url, mimeType: "application/pdf", sizeBytes: m.size })));
+  }
+  await audit(u.id, "lesson.create", "lesson", row.id, mats.items.length ? { materials: mats.items.length } : undefined);
   revalidatePath("/muellim/dersler");
   redirect("/muellim/dersler");
 }

@@ -7,14 +7,13 @@ import { db } from "@/db";
 import { lessonMaterials, lessons } from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { AuthError, assertPermission } from "@/lib/auth";
+import { MAX_MATERIALS_PER_LESSON, MAX_MATERIAL_BYTES, isOwnBlobUrl } from "@/lib/lesson-materials";
 import type { CurrentUser } from "@/lib/session";
 
 type Res = { ok?: boolean; error?: string };
 
-const MAX_BYTES = 10 * 1024 * 1024;
-const MAX_PER_LESSON = 20;
-/** Only files stored in our own Vercel Blob store may be registered (never arbitrary URLs). */
-const BLOB_HOST = /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i;
+const MAX_BYTES = MAX_MATERIAL_BYTES;
+const MAX_PER_LESSON = MAX_MATERIALS_PER_LESSON;
 
 const addSchema = z.object({
   lessonId: z.uuid(),
@@ -46,15 +45,7 @@ export async function addLessonMaterial(input: { lessonId: string; title: string
   const parsed = addSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Məlumat yanlışdır." };
   const { lessonId, title, url, size } = parsed.data;
-  let host: string;
-  try {
-    const parsedUrl = new URL(url);
-    if (parsedUrl.protocol !== "https:") throw new Error();
-    host = parsedUrl.hostname;
-  } catch {
-    return { error: "Fayl ünvanı yanlışdır." };
-  }
-  if (!BLOB_HOST.test(host) || !new URL(url).pathname.startsWith("/materials/")) return { error: "Fayl ünvanı qəbul olunmur." };
+  if (!isOwnBlobUrl(url)) return { error: "Fayl ünvanı qəbul olunmur." };
   if (!(await ownedLesson(u, lessonId))) return { error: "Dərs tapılmadı." };
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(lessonMaterials).where(eq(lessonMaterials.lessonId, lessonId));
   if (n >= MAX_PER_LESSON) return { error: `Bir dərsə ən çox ${MAX_PER_LESSON} material əlavə etmək olar.` };
@@ -73,7 +64,7 @@ export async function deleteLessonMaterial(materialId: string): Promise<Res> {
   if (!m || !(await ownedLesson(u, m.lessonId))) return { error: "Material tapılmadı." };
   await db.delete(lessonMaterials).where(and(eq(lessonMaterials.id, materialId)));
   // Best effort: free the Blob storage too. The row is already gone, so a failure here is harmless.
-  if (process.env.BLOB_READ_WRITE_TOKEN && BLOB_HOST.test(new URL(m.fileUrl).hostname)) {
+  if (process.env.BLOB_READ_WRITE_TOKEN && isOwnBlobUrl(m.fileUrl)) {
     try {
       const { del } = await import("@vercel/blob");
       await del(m.fileUrl);

@@ -1,5 +1,6 @@
 import { ActionForm, CheckField, Field, SelectField, SubmitButton, TextArea, type ActionState } from "@/components/ui/action-form";
 import { Card } from "@/components/ui/card";
+import { PendingMaterials } from "./pending-materials";
 
 export interface SubjectsTopics {
   subjects: { id: string; name: string }[];
@@ -28,11 +29,14 @@ export function LessonForm({
   data,
   defaults = {},
   submitLabel,
+  pendingMaterials,
 }: {
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
   data: SubjectsTopics;
   defaults?: LessonDefaults;
   submitLabel: string;
+  /** New-lesson form only: lets the teacher attach PDFs before the lesson exists. */
+  pendingMaterials?: { enabled: boolean };
 }) {
   return (
     <Card className="p-5 sm:p-7">
@@ -59,6 +63,7 @@ export function LessonForm({
         <Field name="durationMin" label="Müddət (dəqiqə)" type="number" min={0} max={600} defaultValue={defaults.durationSec ? Math.round(defaults.durationSec / 60) : ""} className="sm:max-w-48" />
         <TextArea name="description" label="Qısa təsvir" defaultValue={defaults.description ?? ""} className="[&_textarea]:min-h-20" />
         <TextArea name="notes" label="Yazılı dərs qeydləri" defaultValue={defaults.notes ?? ""} hint="Video olmadan da dərc etmək olar." className="[&_textarea]:min-h-48" />
+        {pendingMaterials && <PendingMaterials enabled={pendingMaterials.enabled} />}
         <CheckField name="published" label="Dərc olunsun" hint="Söndürülübsə dərs yalnız sizə görünür (qaralama)." defaultChecked={defaults.published ?? false} />
         <div>
           <SubmitButton>{submitLabel}</SubmitButton>
