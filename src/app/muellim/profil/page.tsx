@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/panel/shell";
 import { ActionForm, CheckField, Field, SubmitButton, TextArea } from "@/components/ui/action-form";
 import { Card } from "@/components/ui/card";
+import { PhotoUpload } from "@/components/teacher/photo-upload";
 import { saveTeacherProfile } from "@/app/actions/teacher";
 import { requireRole } from "@/lib/auth";
 import { getTeacherProfile } from "@/lib/queries/teacher";
@@ -29,7 +30,7 @@ export default async function TeacherProfilePage() {
             <Field name="contactEmail" label="Əlaqə e-poçtu" type="email" defaultValue={p?.contactEmail ?? ""} />
           </div>
           <TextArea name="officeHours" label="Qəbul saatları" defaultValue={p?.officeHours ?? ""} className="[&_textarea]:min-h-20" />
-          <Field name="photoUrl" label="Şəkil ünvanı" defaultValue={p?.photoUrl ?? ""} />
+          <PhotoUpload name="photoUrl" defaultValue={p?.photoUrl ?? ""} enabled={Boolean(process.env.BLOB_READ_WRITE_TOKEN)} />
           <CheckField name="published" label="Profilim saytda görünsün" defaultChecked={p?.published ?? true} />
           <div>
             <SubmitButton>Yadda saxla</SubmitButton>
