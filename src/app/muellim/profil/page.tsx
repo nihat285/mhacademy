@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/panel/shell";
 import { ActionForm, CheckField, Field, SubmitButton, TextArea } from "@/components/ui/action-form";
 import { Card } from "@/components/ui/card";
+import { PasswordCard } from "@/components/account/password-card";
 import { PhotoUpload } from "@/components/teacher/photo-upload";
 import { saveTeacherProfile } from "@/app/actions/teacher";
 import { requireRole } from "@/lib/auth";
@@ -37,6 +38,7 @@ export default async function TeacherProfilePage() {
           </div>
         </ActionForm>
       </Card>
+      <PasswordCard />
     </>
   );
 }
