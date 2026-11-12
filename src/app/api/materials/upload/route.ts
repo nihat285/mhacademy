@@ -1,8 +1,9 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
-import { AuthError, assertPermission } from "@/lib/auth";
+import { AuthError, assertPermission, assertRole } from "@/lib/auth";
 
 const MAX_MATERIAL_BYTES = 10 * 1024 * 1024;
+const MAX_PHOTO_BYTES = 3 * 1024 * 1024;
 
 /**
  * Issues short-lived upload tokens for lesson PDFs (Vercel Blob client uploads, so the file goes straight
@@ -18,8 +19,14 @@ export async function POST(request: Request) {
       body,
       request,
       onBeforeGenerateToken: async (pathname) => {
+        if (pathname.includes("..")) throw new Error("Yanlış fayl yolu.");
+        if (pathname.startsWith("photos/")) {
+          // Teacher / admin profile photos (the browser resizes them to a few hundred KB first).
+          await assertRole(["teacher", "admin"]);
+          return { allowedContentTypes: ["image/jpeg", "image/png", "image/webp"], maximumSizeInBytes: MAX_PHOTO_BYTES, addRandomSuffix: true };
+        }
         await assertPermission("lessons.manage");
-        if (!pathname.startsWith("materials/") || pathname.includes("..")) throw new Error("Yanlış fayl yolu.");
+        if (!pathname.startsWith("materials/")) throw new Error("Yanlış fayl yolu.");
         return {
           allowedContentTypes: ["application/pdf"],
           maximumSizeInBytes: MAX_MATERIAL_BYTES,
