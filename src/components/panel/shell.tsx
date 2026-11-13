@@ -28,7 +28,7 @@ export async function PanelShell({ user, items: baseItems, children }: { user: C
   const items = baseItems.map((i) => (i.href.endsWith("/yazisma") && unread > 0 ? { ...i, badge: unread } : i));
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
-      <aside className="no-print hidden w-64 shrink-0 flex-col border-r border-border bg-surface p-4 lg:flex">
+      <aside className="no-print hidden w-64 shrink-0 flex-col self-start overflow-y-auto border-r border-border bg-surface p-4 lg:sticky lg:top-0 lg:flex lg:h-dvh">
         <div className="px-2 pb-5 pt-1"><Logo /></div>
         <PanelNav items={items} orientation="vertical" />
         <div className="mt-auto space-y-2 border-t border-border pt-4">
