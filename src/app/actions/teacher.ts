@@ -16,6 +16,7 @@ import {
   exams,
   lessonMaterials,
   lessons,
+  topics,
   notifications,
   questionOptions,
   questions,
@@ -146,7 +147,8 @@ function videoRef(provider: string, raw: string): string | null {
 const lessonSchema = z.object({
   title: z.string().trim().min(3, "Başlıq ən azı 3 simvol olmalıdır.").max(220),
   subjectId: z.uuid("Fənn seçin."),
-  topicId: optUuid,
+  // "__new" means "create the topic typed in newTopic"; resolveLessonTopic handles it.
+  topicId: z.preprocess((v) => (v === "" || v === "__new" || v == null ? undefined : v), z.uuid().optional()),
   provider: z.enum(["youtube", "vimeo", "mp4", "embed"]),
   videoRef: z.string().trim().max(500),
   durationMin: optInt(0, 600, "Müddət 0–600 dəqiqə arasında olmalıdır."),
@@ -165,6 +167,31 @@ function parseLesson(fd: FormData) {
   return { d, ref, published };
 }
 
+/**
+ * Resolves the lesson's topic: an existing one (must belong to the chosen subject), none, or a new one typed
+ * by the teacher (an existing topic with the same name in that subject is reused instead of duplicated).
+ */
+async function resolveLessonTopic(u: CurrentUser, fd: FormData, subjectId: string): Promise<{ id: string | null } | { error: Res }> {
+  const raw = str(fd, "topicId");
+  if (raw === "__new") {
+    const name = str(fd, "newTopic").trim().replace(/\s+/g, " ");
+    if (name.length < 2 || name.length > 160) return { error: { fieldErrors: { newTopic: "Mövzunun adını yazın (2–160 simvol)." }, values: formValues(fd) } };
+    const [same] = await db.select({ id: topics.id }).from(topics).where(and(eq(topics.subjectId, subjectId), sql`lower(${topics.name}) = lower(${name})`)).limit(1);
+    if (same) return { id: same.id };
+    let slug = slugify(name, 110);
+    const [clash] = await db.select({ x: sql`1` }).from(topics).where(and(eq(topics.subjectId, subjectId), eq(topics.slug, slug))).limit(1);
+    if (clash) slug = `${slug}-${Date.now().toString(36)}`;
+    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(topics).where(eq(topics.subjectId, subjectId));
+    const [row] = await db.insert(topics).values({ subjectId, name, slug, sortOrder: n }).returning({ id: topics.id });
+    await audit(u.id, "topic.create", "subject", subjectId, { name });
+    return { id: row.id };
+  }
+  if (!raw) return { id: null };
+  const [t] = await db.select({ s: topics.subjectId }).from(topics).where(eq(topics.id, raw)).limit(1);
+  if (!t || t.s !== subjectId) return { error: { fieldErrors: { topicId: "Mövzu seçilmiş fənnə aid deyil." }, values: formValues(fd) } };
+  return { id: raw };
+}
+
 export async function createLesson(_p: Res, fd: FormData): Promise<Res> {
   const u = await actor("lessons.manage");
   if (isRes(u)) return u;
@@ -172,6 +199,8 @@ export async function createLesson(_p: Res, fd: FormData): Promise<Res> {
   if ("error" in r) return r.error as Res;
   const mats = parseMaterialInputs(fd);
   if ("error" in mats) return fail(mats.error, fd);
+  const topic = await resolveLessonTopic(u, fd, r.d.subjectId);
+  if ("error" in topic) return topic.error;
   const slug = await uniqueSlug(lessons, lessons.slug, r.d.title);
   const [row] = await db
     .insert(lessons)
@@ -179,7 +208,7 @@ export async function createLesson(_p: Res, fd: FormData): Promise<Res> {
       slug,
       title: r.d.title,
       subjectId: r.d.subjectId,
-      topicId: r.d.topicId ?? null,
+      topicId: topic.id,
       teacherId: u.id,
       provider: r.d.provider,
       videoRef: r.ref,
@@ -204,12 +233,14 @@ export async function updateLesson(id: string, _p: Res, fd: FormData): Promise<R
   if (!cur || !owns(u, cur.teacherId)) return fail("Dərs tapılmadı.");
   const r = parseLesson(fd);
   if ("error" in r) return r.error as Res;
+  const topic = await resolveLessonTopic(u, fd, r.d.subjectId);
+  if ("error" in topic) return topic.error;
   await db
     .update(lessons)
     .set({
       title: r.d.title,
       subjectId: r.d.subjectId,
-      topicId: r.d.topicId ?? null,
+      topicId: topic.id,
       provider: r.d.provider,
       videoRef: r.ref,
       durationSec: (r.d.durationMin ?? 0) * 60,

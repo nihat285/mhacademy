@@ -1,6 +1,7 @@
 import { ActionForm, CheckField, Field, SelectField, SubmitButton, TextArea, type ActionState } from "@/components/ui/action-form";
 import { Card } from "@/components/ui/card";
 import { PendingMaterials } from "./pending-materials";
+import { SubjectTopicFields } from "./subject-topic-fields";
 
 export interface SubjectsTopics {
   subjects: { id: string; name: string }[];
@@ -42,10 +43,7 @@ export function LessonForm({
     <Card className="p-5 sm:p-7">
       <ActionForm action={action} className="grid gap-5">
         <Field name="title" label="Başlıq" defaultValue={defaults.title} required maxLength={220} />
-        <div className="grid gap-5 sm:grid-cols-2">
-          <SelectField name="subjectId" label="Fənn" defaultValue={defaults.subjectId} options={data.subjects.map((s) => ({ value: s.id, label: s.name }))} />
-          <SelectField name="topicId" label="Mövzu" defaultValue={defaults.topicId ?? ""} options={topicOptions(data)} />
-        </div>
+        <SubjectTopicFields subjects={data.subjects} topics={data.topics} defaultSubjectId={defaults.subjectId} defaultTopicId={defaults.topicId} />
         <div className="grid gap-5 sm:grid-cols-3">
           <SelectField
             name="provider"
