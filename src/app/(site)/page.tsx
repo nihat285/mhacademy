@@ -50,13 +50,13 @@ export default async function HomePage() {
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.15fr_0.85fr] lg:py-28">
           <div className="rise">
             <p className="inline-flex items-center gap-2 rounded-full border border-gold-500/40 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-gold-300">
-              <ShieldCheck size={14} /> Premium onlayn təhsil
+              <ShieldCheck size={14} /> Azərbaycanın ən yaxşı onlayn təhsil platforması
             </p>
             <h1 className="mt-6 text-4xl font-semibold text-balance sm:text-5xl lg:text-[3.4rem]">
-              Hazırlığınızı real imtahan mühitində <span className="text-gold-400">yoxlayın</span>, səhvlərinizdən öyrənin.
+              Doğru addım üçün <span className="text-gold-400">doğru pilləkən.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/75">
-              Onlayn sınaqlar, ətraflı səhv təhlili və peşəkar müəllimlərin dərsləri bir platformada. Hər cəhddən sonra nəyi təkrar etməli olduğunuzu dəqiq bilirsiniz.
+              Real imtahan mühitində onlayn sınaqlar, ətraflı səhv təhlili və peşəkar müəllimlərin dərsləri bir platformada. Hər cəhddən sonra növbəti addımınızı dəqiq bilirsiniz.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <LinkButton href="/sinaqlar" size="lg">
