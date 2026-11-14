@@ -25,6 +25,9 @@ export const SUBJECTS = [
   { slug: "kimya", name: "Kimya", accent: "#3FB68B", description: "Atomun quruluşu, maddələr və məhlullar, kimyəvi reaksiyaların əsasları.", featured: true },
   { slug: "azerbaycan-dili", name: "Azərbaycan dili", accent: "#E0705A", description: "Fonetika, leksika və qrammatika: qaydalar və praktik tapşırıqlar.", featured: true },
   { slug: "ingilis-dili", name: "İngilis dili", accent: "#9A7BE0", description: "Grammar və vocabulary: imtahan formatında məşqlər.", featured: true },
+  { slug: "tarix", name: "Tarix", accent: "#B5835A", description: "Azərbaycan və ümumdünya tarixi: hadisələr, şəxsiyyətlər, xronologiya və xəritə ilə iş.", featured: true },
+  { slug: "edebiyyat", name: "Ədəbiyyat", accent: "#D46A8F", description: "Klassik və müasir ədəbiyyat: əsərlərin təhlili, müəlliflər və ədəbi nəzəriyyə.", featured: true },
+  { slug: "informatika", name: "İnformatika", accent: "#3FA7C9", description: "Alqoritmlər, proqramlaşdırma əsasları, məlumat strukturları və kompüter savadlılığı.", featured: true },
 ] as const;
 
 export const TOPICS: { subject: string; slug: string; name: string }[] = [

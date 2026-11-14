@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx scripts/dev-local.ts",
+    "dev:pg": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -12,6 +13,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:check": "tsx scripts/db-check.ts",
     "db:import-scores": "tsx scripts/import-scores.ts",
+    "db:add-subjects": "tsx scripts/add-subjects.ts",
     "dev:local": "tsx scripts/dev-local.ts",
     "test": "vitest run",
     "test:e2e": "playwright test",
