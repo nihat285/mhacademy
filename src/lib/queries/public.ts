@@ -1,3 +1,4 @@
+import { lessonThumbnail } from "./lesson-thumb";
 import { and, asc, count, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -32,9 +33,9 @@ export async function getSubjectsWithCounts(onlyFeatured = false) {
       name: subjects.name,
       description: subjects.description,
       accent: subjects.accent,
-      lessonCount: sql<number>`(select count(*)::int from lessons l where l.subject_id = ${subjects.id} and l.published)`,
-      examCount: sql<number>`(select count(*)::int from exams e where e.subject_id = ${subjects.id} and e.status = 'published')`,
-      teacherCount: sql<number>`(select count(*)::int from teacher_subjects ts where ts.subject_id = ${subjects.id})`,
+      lessonCount: sql<number>`(select count(*)::int from lessons l where l.subject_id = "subjects"."id" and l.published)`,
+      examCount: sql<number>`(select count(*)::int from exams e where e.subject_id = "subjects"."id" and e.status = 'published')`,
+      teacherCount: sql<number>`(select count(*)::int from teacher_subjects ts where ts.subject_id = "subjects"."id")`,
     })
     .from(subjects)
     .where(onlyFeatured ? eq(subjects.featured, true) : undefined)
@@ -53,7 +54,7 @@ export async function getFeaturedCourses(limit = 6) {
       subjectName: subjects.name,
       subjectSlug: subjects.slug,
       teacherName: users.name,
-      lessonCount: sql<number>`(select count(*)::int from lessons l where l.course_id = ${courses.id} and l.published)`,
+      lessonCount: sql<number>`(select count(*)::int from lessons l where l.course_id = "courses"."id" and l.published)`,
     })
     .from(courses)
     .innerJoin(subjects, eq(subjects.id, courses.subjectId))
@@ -115,7 +116,7 @@ export async function getFeaturedLessons(limit = 6) {
       title: lessons.title,
       description: lessons.description,
       durationSec: lessons.durationSec,
-      thumbnailUrl: lessons.thumbnailUrl,
+      thumbnailUrl: lessonThumbnail,
       hasVideo: sql<boolean>`${lessons.videoRef} is not null`,
       subjectName: subjects.name,
       teacherName: users.name,

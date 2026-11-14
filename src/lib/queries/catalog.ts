@@ -1,3 +1,4 @@
+import { lessonThumbnail } from "./lesson-thumb";
 import { and, asc, count, desc, eq, gt, ilike, inArray, isNotNull, lt, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -59,7 +60,7 @@ export async function getTopicTree(subjectId: string): Promise<TopicNode[]> {
       parentId: topics.parentId,
       slug: topics.slug,
       name: topics.name,
-      lessonCount: sql<number>`(select count(*)::int from lessons l where l.topic_id = ${topics.id} and l.published)`,
+      lessonCount: sql<number>`(select count(*)::int from lessons l where l.topic_id = "topics"."id" and l.published)`,
     })
     .from(topics)
     .where(eq(topics.subjectId, subjectId))
@@ -85,7 +86,7 @@ export async function getSubjectCourses(subjectId: string) {
       grade: courses.grade,
       subjectName: subjects.name,
       teacherName: users.name,
-      lessonCount: sql<number>`(select count(*)::int from lessons l where l.course_id = ${courses.id} and l.published)`,
+      lessonCount: sql<number>`(select count(*)::int from lessons l where l.course_id = "courses"."id" and l.published)`,
     })
     .from(courses)
     .innerJoin(subjects, eq(subjects.id, courses.subjectId))
@@ -100,7 +101,7 @@ const lessonCardSelect = {
   title: lessons.title,
   description: lessons.description,
   durationSec: lessons.durationSec,
-  thumbnailUrl: lessons.thumbnailUrl,
+  thumbnailUrl: lessonThumbnail,
   hasVideo: sql<boolean>`(${lessons.videoRef} is not null and ${lessons.videoRef} <> '')`,
   subjectName: subjects.name,
   teacherName: users.name,
@@ -255,7 +256,7 @@ export async function getTeacherCourses(teacherId: string) {
       grade: courses.grade,
       subjectName: subjects.name,
       teacherName: users.name,
-      lessonCount: sql<number>`(select count(*)::int from lessons l where l.course_id = ${courses.id} and l.published)`,
+      lessonCount: sql<number>`(select count(*)::int from lessons l where l.course_id = "courses"."id" and l.published)`,
     })
     .from(courses)
     .innerJoin(subjects, eq(subjects.id, courses.subjectId))
@@ -388,7 +389,7 @@ export async function getLessonBySlug(slug: string) {
       provider: lessons.provider,
       videoRef: lessons.videoRef,
       durationSec: lessons.durationSec,
-      thumbnailUrl: lessons.thumbnailUrl,
+      thumbnailUrl: lessonThumbnail,
       orderIndex: lessons.orderIndex,
       subjectId: lessons.subjectId,
       subjectSlug: subjects.slug,
@@ -503,7 +504,7 @@ export async function globalSearch(q: string, limit = 8) {
       .orderBy(asc(users.name))
       .limit(limit),
     db
-      .select({ id: subjects.id, slug: subjects.slug, name: subjects.name, description: subjects.description, accent: subjects.accent, lessonCount: sql<number>`(select count(*)::int from lessons l where l.subject_id = ${subjects.id} and l.published)`, examCount: sql<number>`(select count(*)::int from exams e where e.subject_id = ${subjects.id} and e.status = 'published')` })
+      .select({ id: subjects.id, slug: subjects.slug, name: subjects.name, description: subjects.description, accent: subjects.accent, lessonCount: sql<number>`(select count(*)::int from lessons l where l.subject_id = "subjects"."id" and l.published)`, examCount: sql<number>`(select count(*)::int from exams e where e.subject_id = "subjects"."id" and e.status = 'published')` })
       .from(subjects)
       .where(or(ilike(subjects.name, p), ilike(subjects.description, p)))
       .orderBy(asc(subjects.sortOrder))
@@ -517,7 +518,7 @@ export async function globalSearch(q: string, limit = 8) {
         grade: courses.grade,
         subjectName: subjects.name,
         teacherName: users.name,
-        lessonCount: sql<number>`(select count(*)::int from lessons l where l.course_id = ${courses.id} and l.published)`,
+        lessonCount: sql<number>`(select count(*)::int from lessons l where l.course_id = "courses"."id" and l.published)`,
       })
       .from(courses)
       .innerJoin(subjects, eq(subjects.id, courses.subjectId))

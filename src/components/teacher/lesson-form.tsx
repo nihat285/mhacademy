@@ -1,6 +1,7 @@
 import { ActionForm, CheckField, Field, SelectField, SubmitButton, TextArea, type ActionState } from "@/components/ui/action-form";
 import { Card } from "@/components/ui/card";
 import { PendingMaterials } from "./pending-materials";
+import { PhotoUpload } from "./photo-upload";
 import { SubjectTopicFields } from "./subject-topic-fields";
 
 export interface SubjectsTopics {
@@ -19,6 +20,7 @@ export interface LessonDefaults {
   topicId?: string | null;
   provider?: string;
   videoRef?: string | null;
+  thumbnailUrl?: string | null;
   durationSec?: number;
   description?: string | null;
   notes?: string | null;
@@ -58,6 +60,7 @@ export function LessonForm({
           />
           <Field name="videoRef" label="Video ünvanı / ID" defaultValue={defaults.videoRef ?? ""} hint="YouTube linki və ya 11 simvollu ID" className="sm:col-span-2" />
         </div>
+        <PhotoUpload name="thumbnailUrl" label="Qapaq şəkli (ixtiyari)" variant="cover" defaultValue={defaults.thumbnailUrl ?? ""} enabled={Boolean(process.env.BLOB_READ_WRITE_TOKEN)} hint="Dərs kartında görünən şəkil. YouTube videosunda şəkil yükləməsən, YouTube-un öz şəkli avtomatik göstərilir." />
         <Field name="durationMin" label="Müddət (dəqiqə)" type="number" min={0} max={600} defaultValue={defaults.durationSec ? Math.round(defaults.durationSec / 60) : ""} className="sm:max-w-48" />
         <TextArea name="description" label="Qısa təsvir" defaultValue={defaults.description ?? ""} className="[&_textarea]:min-h-20" />
         <TextArea name="notes" label="Yazılı dərs qeydləri" defaultValue={defaults.notes ?? ""} hint="Video olmadan da dərc etmək olar." className="[&_textarea]:min-h-48" />

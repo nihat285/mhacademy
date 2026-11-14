@@ -20,8 +20,8 @@ export async function POST(request: Request) {
       request,
       onBeforeGenerateToken: async (pathname) => {
         if (pathname.includes("..")) throw new Error("Yanlış fayl yolu.");
-        if (pathname.startsWith("photos/")) {
-          // Teacher / admin profile photos (the browser resizes them to a few hundred KB first).
+        if (pathname.startsWith("photos/") || pathname.startsWith("covers/")) {
+          // Teacher / admin profile photos and lesson cover images (the browser resizes them to a few hundred KB first).
           await assertRole(["teacher", "admin"]);
           return { allowedContentTypes: ["image/jpeg", "image/png", "image/webp"], maximumSizeInBytes: MAX_PHOTO_BYTES, addRandomSuffix: true };
         }

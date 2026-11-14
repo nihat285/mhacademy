@@ -4,12 +4,12 @@ import { upload } from "@vercel/blob/client";
 import { Camera, Trash2, User } from "lucide-react";
 import { useRef, useState } from "react";
 
-const MAX_SIDE = 900;
+const MAX_SIDE = { avatar: 900, cover: 1280 } as const;
 
-/** Downscales to at most MAX_SIDE px and re-encodes as JPEG, so a 6 MB phone photo becomes ~150 KB. */
-async function shrink(file: File): Promise<File> {
+/** Downscales to at most `maxSide` px and re-encodes as JPEG, so a 6 MB phone photo becomes ~150 KB. */
+async function shrink(file: File, maxSide: number): Promise<File> {
   const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
+  const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
   const w = Math.round(bmp.width * scale);
   const h = Math.round(bmp.height * scale);
   const canvas = document.createElement("canvas");
@@ -25,7 +25,8 @@ async function shrink(file: File): Promise<File> {
 }
 
 /** Profile photo picker. Submits the final image address in a hidden `name` field. */
-export function PhotoUpload({ name, defaultValue, enabled }: { name: string; defaultValue: string; enabled: boolean }) {
+export function PhotoUpload({ name, defaultValue, enabled, label = "Şəkil", variant = "avatar", hint }: { name: string; defaultValue: string; enabled: boolean; label?: string; variant?: "avatar" | "cover"; hint?: string }) {
+  const cover = variant === "cover";
   const inputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState(defaultValue);
   const [busy, setBusy] = useState(false);
@@ -41,11 +42,11 @@ export function PhotoUpload({ name, defaultValue, enabled }: { name: string; def
     try {
       let small: File;
       try {
-        small = await shrink(file);
+        small = await shrink(file, MAX_SIDE[variant]);
       } catch {
         return setError("Şəkil oxuna bilmədi. JPG və ya PNG formatında seçin.");
       }
-      const blob = await upload("photos/profile.jpg", small, { access: "public", handleUploadUrl: "/api/materials/upload", contentType: "image/jpeg" });
+      const blob = await upload(cover ? "covers/lesson.jpg" : "photos/profile.jpg", small, { access: "public", handleUploadUrl: "/api/materials/upload", contentType: "image/jpeg" });
       setUrl(blob.url);
     } catch (err) {
       setError(err instanceof Error && err.message ? `Yükləmə alınmadı: ${err.message}` : "Yükləmə alınmadı. Bir az sonra yenidən yoxlayın.");
@@ -56,13 +57,13 @@ export function PhotoUpload({ name, defaultValue, enabled }: { name: string; def
 
   return (
     <div className="grid gap-2">
-      <span className="text-sm font-semibold">Şəkil</span>
+      <span className="text-sm font-semibold">{label}</span>
       <div className="flex items-center gap-4">
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="Profil şəkli" className="h-24 w-24 rounded-2xl border border-border object-cover" />
+          <img src={url} alt={label} className={cover ? "aspect-video w-44 rounded-2xl border border-border object-cover" : "h-24 w-24 rounded-2xl border border-border object-cover"} />
         ) : (
-          <span className="grid h-24 w-24 place-items-center rounded-2xl border border-dashed border-border-strong text-muted"><User size={32} /></span>
+          <span className={cover ? "grid aspect-video w-44 place-items-center rounded-2xl border border-dashed border-border-strong text-muted" : "grid h-24 w-24 place-items-center rounded-2xl border border-dashed border-border-strong text-muted"}><User size={32} /></span>
         )}
         <div className="grid gap-2">
           {enabled ? (
@@ -80,7 +81,7 @@ export function PhotoUpload({ name, defaultValue, enabled }: { name: string; def
               <Trash2 size={14} /> Şəkli sil
             </button>
           )}
-          <p className="text-xs text-muted">JPG, PNG və ya WebP. Şəkil avtomatik kiçildilir. Yadda saxla düyməsini basmağı unutmayın.</p>
+          <p className="max-w-sm text-xs text-muted">{hint ?? "JPG, PNG və ya WebP. Şəkil avtomatik kiçildilir. Yadda saxla düyməsini basmağı unutmayın."}</p>
         </div>
       </div>
       <input type="hidden" name={name} value={url} />

@@ -152,6 +152,7 @@ const lessonSchema = z.object({
   provider: z.enum(["youtube", "vimeo", "mp4", "embed"]),
   videoRef: z.string().trim().max(500),
   durationMin: optInt(0, 600, "Müddət 0–600 dəqiqə arasında olmalıdır."),
+  thumbnailUrl: optionalImageUrl,
   description: z.string().trim().max(2000),
   notes: z.string().trim().max(20000, "Qeydlər çox uzundur."),
 });
@@ -213,6 +214,7 @@ export async function createLesson(_p: Res, fd: FormData): Promise<Res> {
       provider: r.d.provider,
       videoRef: r.ref,
       durationSec: (r.d.durationMin ?? 0) * 60,
+      thumbnailUrl: r.d.thumbnailUrl || null,
       description: r.d.description || null,
       notes: r.d.notes || null,
       published: r.published,
@@ -244,6 +246,7 @@ export async function updateLesson(id: string, _p: Res, fd: FormData): Promise<R
       provider: r.d.provider,
       videoRef: r.ref,
       durationSec: (r.d.durationMin ?? 0) * 60,
+      thumbnailUrl: r.d.thumbnailUrl || null,
       description: r.d.description || null,
       notes: r.d.notes || null,
       published: r.published,
