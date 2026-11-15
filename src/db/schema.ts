@@ -35,6 +35,7 @@ export const resultReleaseEnum = pgEnum("result_release", ["immediate", "after_e
 export const attemptStatusEnum = pgEnum("attempt_status", ["in_progress", "submitted", "auto_submitted"]);
 export const tokenTypeEnum = pgEnum("token_type", ["verify_email", "reset_password"]);
 export const audienceEnum = pgEnum("audience", ["all", "students", "teachers", "class"]);
+export const subscriptionStatusEnum = pgEnum("subscription_status", ["pending", "active", "cancelled"]);
 
 const id = () => uuid("id").primaryKey().defaultRandom();
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -241,6 +242,8 @@ export const lessons = pgTable(
     orderIndex: integer("order_index").notNull().default(0),
     featured: boolean("featured").notNull().default(false),
     published: boolean("published").notNull().default(true),
+    /** VIP lessons (video + PDF materials) are open only to subscribers whose package covers the subject. */
+    isVip: boolean("is_vip").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -414,6 +417,7 @@ export const exams = pgTable(
     resultRelease: resultReleaseEnum("result_release").notNull().default("immediate"),
     resultsReleasedAt: timestamp("results_released_at", { withTimezone: true }),
     featured: boolean("featured").notNull().default(false),
+    isVip: boolean("is_vip").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -570,6 +574,44 @@ export const faqs = pgTable("faqs", {
   published: boolean("published").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
 });
+
+/** Subscription packages. `subjectLimit` = how many subjects the student may choose; null = all subjects. */
+export const plans = pgTable("plans", {
+  id: id(),
+  name: varchar("name", { length: 80 }).notNull(),
+  description: text("description"),
+  priceAzn: integer("price_azn").notNull().default(0),
+  subjectLimit: integer("subject_limit"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: createdAt(),
+});
+
+/** One row per purchase. A student has access while status = active and now < endsAt. */
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: id(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    planId: uuid("plan_id").notNull().references(() => plans.id, { onDelete: "restrict" }),
+    status: subscriptionStatusEnum("status").notNull().default("pending"),
+    startsAt: timestamp("starts_at", { withTimezone: true }),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    note: text("note"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("subscriptions_user_idx").on(t.userId)],
+);
+
+export const subscriptionSubjects = pgTable(
+  "subscription_subjects",
+  {
+    subscriptionId: uuid("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "cascade" }),
+    subjectId: uuid("subject_id").notNull().references(() => subjects.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.subscriptionId, t.subjectId] })],
+);
 
 export const siteSettings = pgTable("site_settings", {
   key: varchar("key", { length: 100 }).primaryKey(),

@@ -7,6 +7,8 @@ import { examPhase, PHASE_LABEL, PHASE_TONE } from "@/lib/exam-phase";
 import { DIFFICULTY_LABEL, formatDateTime, formatMinutes } from "@/lib/format";
 import { getPublicExamBySlug } from "@/lib/queries/catalog";
 import { getCurrentUser } from "@/lib/session";
+import { vipAccess } from "@/lib/subscription";
+import { VipLock } from "@/components/catalog/vip-lock";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -21,6 +23,7 @@ export default async function ExamPage({ params }: Props) {
   if (!e) notFound();
   const user = await getCurrentUser();
   const phase = examPhase(e);
+  const access = e.isVip ? await vipAccess(user, e.subjectId) : "open";
   const rows: [string, string][] = [
     ["Fənn", e.subjectName],
     ["Başlama", formatDateTime(e.startsAt)],
@@ -48,8 +51,14 @@ export default async function ExamPage({ params }: Props) {
               ))}
             </dl>
           </Card>
+          {access !== "open" && phase !== "ended" ? (
+            <div className="h-fit"><VipLock access={access} next={`/sinaqlar/${e.slug}`} what="sınaq" /></div>
+          ) : (
           <Card className="h-fit p-6">
-            <Badge tone={PHASE_TONE[phase]}>{PHASE_LABEL[phase]}</Badge>
+            <div className="flex flex-wrap gap-2">
+              <Badge tone={PHASE_TONE[phase]}>{PHASE_LABEL[phase]}</Badge>
+              {e.isVip && <Badge tone="warning">VIP</Badge>}
+            </div>
             {phase === "ended" ? (
               <p className="mt-3 text-sm text-muted">Bu sınaq bitib. Yeni sınaqlara baxın.</p>
             ) : user ? (
@@ -63,6 +72,7 @@ export default async function ExamPage({ params }: Props) {
               <LinkButton href="/sinaqlar" variant="ghost" className="w-full">Bütün sınaqlar</LinkButton>
             </div>
           </Card>
+          )}
         </div>
       </Container>
     </>

@@ -25,6 +25,7 @@ export interface LessonDefaults {
   description?: string | null;
   notes?: string | null;
   published?: boolean;
+  isVip?: boolean;
 }
 
 export function LessonForm({
@@ -65,6 +66,7 @@ export function LessonForm({
         <TextArea name="description" label="Qısa təsvir" defaultValue={defaults.description ?? ""} className="[&_textarea]:min-h-20" />
         <TextArea name="notes" label="Yazılı dərs qeydləri" defaultValue={defaults.notes ?? ""} hint="Video olmadan da dərc etmək olar." className="[&_textarea]:min-h-48" />
         {pendingMaterials && <PendingMaterials enabled={pendingMaterials.enabled} />}
+        <CheckField name="isVip" label="VIP dərs" hint="Video, qeydlər və PDF-lər yalnız paketi olan şagirdlərə açılır." defaultChecked={defaults.isVip ?? false} />
         <CheckField name="published" label="Dərc olunsun" hint="Söndürülübsə dərs yalnız sizə görünür (qaralama)." defaultChecked={defaults.published ?? false} />
         <div>
           <SubmitButton>{submitLabel}</SubmitButton>

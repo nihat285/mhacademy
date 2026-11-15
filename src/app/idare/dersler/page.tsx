@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/panel/shell";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, EmptyState } from "@/components/ui/card";
 import { FilterBar, TableWrap, Td, Th, THead, Tr } from "@/components/ui/table";
+import { setLessonVip } from "@/app/actions/subscriptions";
+import { ActionButton } from "@/components/admin/action-button";
 import { requireRole } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { listAllLessons } from "@/lib/queries/admin";
@@ -24,7 +26,7 @@ export default async function LessonsAdmin({ searchParams }: { searchParams: SP 
         <EmptyState title="Dərs tapılmadı" />
       ) : (
         <TableWrap>
-          <THead><tr><Th>Dərs</Th><Th>Fənn</Th><Th>Müəllim</Th><Th>Status</Th><Th>Yenilənib</Th></tr></THead>
+          <THead><tr><Th>Dərs</Th><Th>Fənn</Th><Th>Müəllim</Th><Th>Status</Th><Th>VIP</Th><Th>Yenilənib</Th></tr></THead>
           <tbody>
             {rows.map((l) => (
               <Tr key={l.id}>
@@ -32,6 +34,12 @@ export default async function LessonsAdmin({ searchParams }: { searchParams: SP 
                 <Td>{l.subject}</Td>
                 <Td>{l.teacher ?? "—"}</Td>
                 <Td><Badge tone={l.published ? "success" : "neutral"}>{l.published ? "Dərc olunub" : "Qaralama"}</Badge></Td>
+                <Td>
+                  <span className="inline-flex items-center gap-2">
+                    {l.isVip && <Badge tone="warning">VIP</Badge>}
+                    <ActionButton action={setLessonVip.bind(null, l.id, !l.isVip)}>{l.isVip ? "VIP-dən çıxar" : "VIP et"}</ActionButton>
+                  </span>
+                </Td>
                 <Td>{formatDate(l.updatedAt)}</Td>
               </Tr>
             ))}

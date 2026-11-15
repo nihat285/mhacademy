@@ -5,6 +5,7 @@ export const NAV_ITEMS = [
   { href: "/sinaqlar", label: "Sınaqlar" },
   { href: "/ixtisas-ballari", label: "İxtisas balları" },
   { href: "/dersler", label: "Video dərslər" },
+  { href: "/paketler", label: "VIP paketlər" },
   { href: "/neticeler", label: "Nəticələr" },
   { href: "/haqqimizda", label: "Haqqımızda" },
   { href: "/elaqe", label: "Əlaqə" },

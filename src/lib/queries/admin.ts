@@ -67,9 +67,9 @@ export async function listSubjectsAdmin() {
       accent: subjects.accent,
       featured: subjects.featured,
       sortOrder: subjects.sortOrder,
-      topicCount: sql<number>`(select count(*)::int from ${topics} where ${topics.subjectId} = ${subjects.id})`,
-      lessonCount: sql<number>`(select count(*)::int from ${lessons} where ${lessons.subjectId} = ${subjects.id})`,
-      courseCount: sql<number>`(select count(*)::int from ${courses} where ${courses.subjectId} = ${subjects.id})`,
+      topicCount: sql<number>`(select count(*)::int from ${topics} where ${topics.subjectId} = "subjects"."id")`,
+      lessonCount: sql<number>`(select count(*)::int from ${lessons} where ${lessons.subjectId} = "subjects"."id")`,
+      courseCount: sql<number>`(select count(*)::int from ${courses} where ${courses.subjectId} = "subjects"."id")`,
     })
     .from(subjects)
     .orderBy(asc(subjects.sortOrder), asc(subjects.name));
@@ -93,7 +93,7 @@ export async function listCoursesAdmin() {
       published: courses.published,
       subject: subjects.name,
       teacher: users.name,
-      lessonCount: sql<number>`(select count(*)::int from ${lessons} where ${lessons.courseId} = ${courses.id})`,
+      lessonCount: sql<number>`(select count(*)::int from ${lessons} where ${lessons.courseId} = "courses"."id")`,
     })
     .from(courses)
     .innerJoin(subjects, eq(subjects.id, courses.subjectId))
@@ -108,7 +108,7 @@ export async function getCourseAdmin(id: string) {
 
 export async function listAllLessons(q?: string) {
   return db
-    .select({ id: lessons.id, title: lessons.title, published: lessons.published, subject: subjects.name, teacher: users.name, updatedAt: lessons.updatedAt })
+    .select({ id: lessons.id, title: lessons.title, published: lessons.published, isVip: lessons.isVip, subject: subjects.name, teacher: users.name, updatedAt: lessons.updatedAt })
     .from(lessons)
     .innerJoin(subjects, eq(subjects.id, lessons.subjectId))
     .leftJoin(users, eq(users.id, lessons.teacherId))
@@ -134,12 +134,13 @@ export async function listAllExams() {
       id: exams.id,
       title: exams.title,
       status: exams.status,
+      isVip: exams.isVip,
       endsAt: exams.endsAt,
       resultRelease: exams.resultRelease,
       resultsReleasedAt: exams.resultsReleasedAt,
       subject: subjects.name,
       author: users.name,
-      attempts: sql<number>`(select count(*)::int from ${examAttempts} where ${examAttempts.examId} = ${exams.id} and ${examAttempts.status} <> 'in_progress')`,
+      attempts: sql<number>`(select count(*)::int from ${examAttempts} where ${examAttempts.examId} = "exams"."id" and ${examAttempts.status} <> 'in_progress')`,
     })
     .from(exams)
     .innerJoin(subjects, eq(subjects.id, exams.subjectId))

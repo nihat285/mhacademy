@@ -22,6 +22,7 @@ export interface ExamDefaults {
   shuffleQuestions?: boolean;
   shuffleOptions?: boolean;
   showExplanations?: boolean;
+  isVip?: boolean;
   questionIds?: string[];
   classIds?: string[];
 }
@@ -110,6 +111,7 @@ export function ExamForm({
           <CheckField name="shuffleQuestions" label="Sualları qarışdır" defaultChecked={defaults.shuffleQuestions ?? true} />
           <CheckField name="shuffleOptions" label="Variantları qarışdır" defaultChecked={defaults.shuffleOptions ?? true} />
           <CheckField name="showExplanations" label="İzahları göstər" defaultChecked={defaults.showExplanations ?? true} />
+          <CheckField name="isVip" label="VIP sınaq" hint="Yalnız paketi olan şagirdlər iştirak edə bilər." defaultChecked={defaults.isVip ?? false} />
         </div>
 
         {canAssign && (

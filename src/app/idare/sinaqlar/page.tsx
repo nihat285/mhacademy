@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/panel/shell";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, EmptyState } from "@/components/ui/card";
 import { TableWrap, Td, Th, THead, Tr } from "@/components/ui/table";
+import { setExamVip } from "@/app/actions/subscriptions";
+import { ActionButton } from "@/components/admin/action-button";
 import { requireRole } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
 import { listAllExams } from "@/lib/queries/admin";
@@ -21,7 +23,7 @@ export default async function ExamsAdmin() {
         <EmptyState title="Sınaq yoxdur" />
       ) : (
         <TableWrap>
-          <THead><tr><Th>Sınaq</Th><Th>Fənn</Th><Th>Müəllif</Th><Th>Bitmə</Th><Th>Cəhd</Th><Th>Status</Th></tr></THead>
+          <THead><tr><Th>Sınaq</Th><Th>Fənn</Th><Th>Müəllif</Th><Th>Bitmə</Th><Th>Cəhd</Th><Th>Status</Th><Th>VIP</Th></tr></THead>
           <tbody>
             {rows.map((e) => (
               <Tr key={e.id}>
@@ -31,6 +33,12 @@ export default async function ExamsAdmin() {
                 <Td className="whitespace-nowrap text-xs">{formatDateTime(e.endsAt)}</Td>
                 <Td>{e.attempts}</Td>
                 <Td><Badge tone={STATUS[e.status][1]}>{STATUS[e.status][0]}</Badge></Td>
+                <Td>
+                  <span className="inline-flex items-center gap-2">
+                    {e.isVip && <Badge tone="warning">VIP</Badge>}
+                    <ActionButton action={setExamVip.bind(null, e.id, !e.isVip)}>{e.isVip ? "VIP-dən çıxar" : "VIP et"}</ActionButton>
+                  </span>
+                </Td>
               </Tr>
             ))}
           </tbody>

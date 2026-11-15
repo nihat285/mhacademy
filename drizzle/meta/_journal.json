@@ -43,6 +43,13 @@
       "when": 1794386547557,
       "tag": "0005_admission_sort_order",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794760858974,
+      "tag": "0006_vip_subscriptions",
+      "breakpoints": true
     }
   ]
 }

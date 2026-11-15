@@ -165,7 +165,7 @@ function parseLesson(fd: FormData) {
   if (d.videoRef && !ref) return { error: { fieldErrors: { videoRef: "Video ünvanı/identifikatoru düzgün deyil." }, values: formValues(fd) } as Res };
   const published = bool(fd, "published");
   if (published && !ref && !d.notes) return { error: { fieldErrors: { notes: "Dərc etmək üçün video və ya yazılı qeyd əlavə edin." }, values: formValues(fd) } as Res };
-  return { d, ref, published };
+  return { d, ref, published, isVip: bool(fd, "isVip") };
 }
 
 /**
@@ -218,6 +218,7 @@ export async function createLesson(_p: Res, fd: FormData): Promise<Res> {
       description: r.d.description || null,
       notes: r.d.notes || null,
       published: r.published,
+      isVip: r.isVip,
     })
     .returning({ id: lessons.id });
   if (mats.items.length > 0) {
@@ -250,6 +251,7 @@ export async function updateLesson(id: string, _p: Res, fd: FormData): Promise<R
       description: r.d.description || null,
       notes: r.d.notes || null,
       published: r.published,
+      isVip: r.isVip,
       updatedAt: new Date(),
     })
     .where(eq(lessons.id, id));
@@ -528,6 +530,7 @@ export async function saveExam(examId: string | null, _p: Res, fd: FormData): Pr
     attemptLimit: d.attemptLimit,
     showExplanations: bool(fd, "showExplanations"),
     resultRelease: d.resultRelease,
+    isVip: bool(fd, "isVip"),
   };
 
   let id = examId;

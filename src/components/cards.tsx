@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, Clock, FileQuestion, PlayCircle } from "lucide-react";
+import { BookOpen, Calendar, Clock, Crown, FileQuestion, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { Badge, Card } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export function ExamCard({
   e,
   action,
 }: {
-  e: { slug: string; title: string; startsAt: Date; endsAt: Date; durationMin: number; difficulty: "easy" | "medium" | "hard"; subjectName: string; questionCount: number };
+  e: { slug: string; title: string; startsAt: Date; endsAt: Date; durationMin: number; difficulty: "easy" | "medium" | "hard"; subjectName: string; questionCount: number; isVip?: boolean };
   action?: React.ReactNode;
 }) {
   const phase = examPhase(e);
@@ -95,6 +95,7 @@ export function ExamCard({
         <Badge tone="gold">{e.subjectName}</Badge>
         <Badge tone={PHASE_TONE[phase]}>{PHASE_LABEL[phase]}</Badge>
         <Badge>{DIFFICULTY_LABEL[e.difficulty]}</Badge>
+        {e.isVip && <Badge tone="warning"><Crown size={12} /> VIP</Badge>}
       </div>
       <h3 className="mt-3 font-display text-lg font-semibold">{e.title}</h3>
       <ul className="mt-3 space-y-1.5 text-sm text-muted">
@@ -112,7 +113,7 @@ export function ExamCard({
   );
 }
 
-export function LessonCard({ l }: { l: { slug: string; title: string; description: string | null; durationSec: number; thumbnailUrl: string | null; hasVideo: boolean; subjectName: string; teacherName: string | null } }) {
+export function LessonCard({ l }: { l: { slug: string; title: string; description: string | null; durationSec: number; thumbnailUrl: string | null; hasVideo: boolean; isVip?: boolean; subjectName: string; teacherName: string | null } }) {
   return (
     <Link href={`/dersler/${l.slug}`} className="group block">
       <Card className="h-full overflow-hidden p-0 transition group-hover:-translate-y-0.5 group-hover:shadow-pop">
@@ -126,6 +127,7 @@ export function LessonCard({ l }: { l: { slug: string; title: string; descriptio
         <div className="p-4">
           <div className="flex items-center gap-2">
             <Badge tone="gold">{l.subjectName}</Badge>
+            {l.isVip && <Badge tone="warning"><Crown size={12} /> VIP</Badge>}
             {!l.hasVideo && <Badge>Mətn dərsi</Badge>}
           </div>
           <h3 className="mt-2 font-display text-base font-semibold leading-snug">{l.title}</h3>

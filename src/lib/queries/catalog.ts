@@ -103,6 +103,7 @@ const lessonCardSelect = {
   durationSec: lessons.durationSec,
   thumbnailUrl: lessonThumbnail,
   hasVideo: sql<boolean>`(${lessons.videoRef} is not null and ${lessons.videoRef} <> '')`,
+  isVip: lessons.isVip,
   subjectName: subjects.name,
   teacherName: users.name,
 };
@@ -128,6 +129,7 @@ export async function getSubjectUpcomingExams(subjectId: string, limit = 6) {
       endsAt: exams.endsAt,
       durationMin: exams.durationMin,
       difficulty: exams.difficulty,
+      isVip: exams.isVip,
       subjectName: subjects.name,
       questionCount: questionCountSql,
     })
@@ -156,6 +158,8 @@ const publicExamSelect = {
   attemptLimit: exams.attemptLimit,
   subjectName: subjects.name,
   subjectSlug: subjects.slug,
+  subjectId: exams.subjectId,
+  isVip: exams.isVip,
   questionCount: questionCountSql,
 };
 
@@ -388,6 +392,7 @@ export async function getLessonBySlug(slug: string) {
       notes: lessons.notes,
       provider: lessons.provider,
       videoRef: lessons.videoRef,
+      isVip: lessons.isVip,
       durationSec: lessons.durationSec,
       thumbnailUrl: lessonThumbnail,
       orderIndex: lessons.orderIndex,

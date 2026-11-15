@@ -97,6 +97,7 @@ export async function getUpcomingExams(limit = 4) {
       endsAt: exams.endsAt,
       durationMin: exams.durationMin,
       difficulty: exams.difficulty,
+      isVip: exams.isVip,
       subjectName: subjects.name,
       subjectAccent: subjects.accent,
       questionCount: sql<number>`(select count(*)::int from exam_questions eq where eq.exam_id = ${exams.id})`,
@@ -118,6 +119,7 @@ export async function getFeaturedLessons(limit = 6) {
       durationSec: lessons.durationSec,
       thumbnailUrl: lessonThumbnail,
       hasVideo: sql<boolean>`${lessons.videoRef} is not null`,
+      isVip: lessons.isVip,
       subjectName: subjects.name,
       teacherName: users.name,
     })

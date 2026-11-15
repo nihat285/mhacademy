@@ -7,11 +7,13 @@ import { Photo } from "@/components/cards";
 import { Container, PageHeader } from "@/components/catalog/page-header";
 import { safeFileUrl } from "@/components/catalog/video-source";
 import { LessonWatch } from "@/components/catalog/lesson-watch";
+import { VipLock } from "@/components/catalog/vip-lock";
 import { Prose } from "@/components/prose";
 import { Badge, Card } from "@/components/ui/card";
 import { formatDuration } from "@/lib/format";
 import { getCompletedLessonIds, getCourseLessonList, getLessonBySlug, getLessonMaterials, getLessonStudentState, getRelatedLessons } from "@/lib/queries/catalog";
 import { getCurrentUser } from "@/lib/session";
+import { vipAccess } from "@/lib/subscription";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -29,8 +31,11 @@ export default async function LessonPage({ params }: Props) {
 
   const user = await getCurrentUser();
   const viewer = !user ? null : user.role === "student" ? "student" : "staff";
+  // VIP lessons: video, notes and PDFs are only loaded for viewers whose package covers the subject.
+  const access = lesson.isVip ? await vipAccess(user, lesson.subjectId) : "open";
+  const locked = access !== "open";
   const [materials, courseLessons, related, state] = await Promise.all([
-    getLessonMaterials(lesson.id),
+    locked ? Promise.resolve([]) : getLessonMaterials(lesson.id),
     lesson.courseId ? getCourseLessonList(lesson.courseId) : Promise.resolve([]),
     getRelatedLessons(lesson),
     user?.role === "student" ? getLessonStudentState(user.id, lesson.id) : Promise.resolve({ positionSec: 0, completed: false, bookmarked: false }),
@@ -46,22 +51,27 @@ export default async function LessonPage({ params }: Props) {
       <Container>
         <div className="grid gap-10 lg:grid-cols-[1fr_340px]">
           <div className="min-w-0">
-            <LessonWatch
-              lessonId={lesson.id}
-              title={lesson.title}
-              provider={lesson.provider}
-              videoRef={lesson.videoRef}
-              signInHref={`/giris?next=${encodeURIComponent(`/dersler/${lesson.slug}`)}`}
-              viewer={viewer}
-              initial={state}
-            />
+            {locked ? (
+              <VipLock access={access} next={`/dersler/${lesson.slug}`} />
+            ) : (
+              <LessonWatch
+                lessonId={lesson.id}
+                title={lesson.title}
+                provider={lesson.provider}
+                videoRef={lesson.videoRef}
+                signInHref={`/giris?next=${encodeURIComponent(`/dersler/${lesson.slug}`)}`}
+                viewer={viewer}
+                initial={state}
+              />
+            )}
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <Badge tone="gold">{lesson.subjectName}</Badge>
+              {lesson.isVip && <Badge tone="warning">VIP</Badge>}
               {lesson.topicName && <Badge>{lesson.topicName}</Badge>}
               {lesson.durationSec > 0 && <Badge>{formatDuration(lesson.durationSec)}</Badge>}
             </div>
             {lesson.description && <p className="mt-4 text-lg text-muted">{lesson.description}</p>}
-            {lesson.notes && (
+            {!locked && lesson.notes && (
               <section className="mt-8" aria-labelledby="notes-h">
                 <h2 id="notes-h" className="text-2xl font-semibold">Dərs qeydləri</h2>
                 <Prose text={lesson.notes} className="mt-3" />
