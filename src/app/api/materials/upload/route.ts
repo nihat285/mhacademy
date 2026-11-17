@@ -25,6 +25,11 @@ export async function POST(request: Request) {
           await assertRole(["teacher", "admin"]);
           return { allowedContentTypes: ["image/jpeg", "image/png", "image/webp"], maximumSizeInBytes: MAX_PHOTO_BYTES, addRandomSuffix: true };
         }
+        if (pathname.startsWith("imports/")) {
+          // Question-bank PDFs: read once by the import action, then deleted.
+          await assertPermission("questions.manage");
+          return { allowedContentTypes: ["application/pdf"], maximumSizeInBytes: MAX_MATERIAL_BYTES, addRandomSuffix: true };
+        }
         await assertPermission("lessons.manage");
         if (!pathname.startsWith("materials/")) throw new Error("Yanlış fayl yolu.");
         return {

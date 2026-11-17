@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HelpCircle, Plus } from "lucide-react";
+import { FileUp, HelpCircle, Plus } from "lucide-react";
 import { deleteQuestion } from "@/app/actions/teacher";
 import { one } from "@/components/catalog/params";
 import { PageHeader } from "@/components/panel/shell";
@@ -32,7 +32,7 @@ export default async function TeacherQuestions({ searchParams }: { searchParams:
   const used = await questionIdsUsedInExams(rows.map((r) => r.id));
   return (
     <>
-      <PageHeader title="Sual bankı" intro="Sınaqlarda və təkrarda istifadə olunan suallar." actions={<LinkButton href="/muellim/suallar/yeni"><Plus size={16} /> Yeni sual</LinkButton>} />
+      <PageHeader title="Sual bankı" intro="Sınaqlarda və təkrarda istifadə olunan suallar." actions={<><LinkButton href="/muellim/suallar/idxal" variant="outline"><FileUp size={16} /> PDF-dən idxal</LinkButton><LinkButton href="/muellim/suallar/yeni"><Plus size={16} /> Yeni sual</LinkButton></>} />
       <FilterBar action="/muellim/suallar" q={q} placeholder="Sual mətnində axtar…">
         <select name="fen" defaultValue={fen} className={selectClass} aria-label="Fənn">
           <option value="">Bütün fənlər</option>
