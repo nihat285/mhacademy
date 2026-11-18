@@ -3,6 +3,7 @@ import type { PanelNavItem } from "./panel-nav";
 export const STUDENT_NAV: PanelNavItem[] = [
   { href: "/panel", label: "İcmal", icon: "dashboard", exact: true },
   { href: "/panel/sinaqlar", label: "Sınaqlar", icon: "exams" },
+  { href: "/panel/canli-dersler", label: "Canlı dərslər", icon: "calendar" },
   { href: "/panel/neticelerim", label: "Nəticələrim", icon: "history" },
   { href: "/panel/sehvlerim", label: "Səhvlərim", icon: "mistakes" },
   { href: "/panel/tekrar", label: "Təkrar", icon: "practice" },
@@ -16,6 +17,7 @@ export const STUDENT_NAV: PanelNavItem[] = [
 export const TEACHER_NAV: PanelNavItem[] = [
   { href: "/muellim", label: "İcmal", icon: "dashboard", exact: true },
   { href: "/muellim/dersler", label: "Dərslər", icon: "lessons" },
+  { href: "/muellim/canli-dersler", label: "Canlı dərslər", icon: "calendar" },
   { href: "/muellim/suallar", label: "Sual bankı", icon: "questions" },
   { href: "/muellim/sinaqlar", label: "Sınaqlar", icon: "exams" },
   { href: "/muellim/neticeler", label: "Nəticələr", icon: "results" },
@@ -32,6 +34,7 @@ export const ADMIN_NAV: PanelNavItem[] = [
   { href: "/idare/fenler", label: "Fənlər və mövzular", icon: "subjects" },
   { href: "/idare/kurslar", label: "Kurslar", icon: "courses" },
   { href: "/idare/dersler", label: "Video dərslər", icon: "lessons" },
+  { href: "/idare/canli-dersler", label: "Canlı dərslər", icon: "calendar" },
   { href: "/idare/suallar", label: "Sual bankı", icon: "questions" },
   { href: "/idare/sinaqlar", label: "Sınaqlar", icon: "exams" },
   { href: "/idare/neticeler", label: "Nəticələr", icon: "results" },
