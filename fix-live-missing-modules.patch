@@ -1,0 +1,139 @@
+diff --git a/src/components/content/form-kit.tsx b/src/components/content/form-kit.tsx
+new file mode 100644
+index 0000000..f64937f
+--- /dev/null
++++ b/src/components/content/form-kit.tsx
+@@ -0,0 +1,10 @@
++/**
++ * Form building blocks used by the shared staff pages (live lessons).
++ * They are the project's own form primitives from `ui/action-form` under the C* names those pages use.
++ */
++export {
++  ActionForm as CForm,
++  Field as CField,
++  SelectField as CSelect,
++  TextArea as CTextArea,
++} from "@/components/ui/action-form";
+diff --git a/src/components/content/no-permission.tsx b/src/components/content/no-permission.tsx
+new file mode 100644
+index 0000000..61048a3
+--- /dev/null
++++ b/src/components/content/no-permission.tsx
+@@ -0,0 +1,9 @@
++import { EmptyState } from "@/components/ui/card";
++
++export function NoPermission({ title = "Bu bölməyə icazəniz yoxdur", what }: { title?: string; what: string }) {
++  return (
++    <EmptyState title={title}>
++      {what} üçün administrator sizə uyğun icazəni verməlidir. İcazə veriləndən sonra səhifəni yeniləyin.
++    </EmptyState>
++  );
++}
+diff --git a/src/components/ui/action-form.tsx b/src/components/ui/action-form.tsx
+index 2a0bb9e..30a2338 100644
+--- a/src/components/ui/action-form.tsx
++++ b/src/components/ui/action-form.tsx
+@@ -83,7 +83,7 @@ function useField(name: string) {
+ const inputBase =
+   "w-full rounded-xl border bg-surface px-3.5 text-[0.95rem] text-text placeholder:text-muted/70 transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+ 
+-export function Field({ name, label, hint, className, ...input }: FieldProps & Omit<ComponentProps<"input">, "name">) {
++export function Field({ name, label, hint, className, defaultValue, ...input }: FieldProps & Omit<ComponentProps<"input">, "name">) {
+   const { error, value } = useField(name);
+   const id = `f-${name}`;
+   const isSecret = input.type === "password";
+@@ -95,7 +95,7 @@ export function Field({ name, label, hint, className, ...input }: FieldProps & O
+       <input
+         id={id}
+         name={name}
+-        defaultValue={isSecret ? undefined : (value ?? (input.defaultValue as string | undefined))}
++        defaultValue={isSecret ? undefined : (value ?? (defaultValue as string | undefined))}
+         aria-invalid={!!error}
+         aria-describedby={error ? `${id}-err` : hint ? `${id}-hint` : undefined}
+         className={cn(inputBase, "h-11", error ? "border-danger" : "border-border-strong")}
+@@ -115,7 +115,7 @@ export function Field({ name, label, hint, className, ...input }: FieldProps & O
+   );
+ }
+ 
+-export function TextArea({ name, label, hint, className, ...rest }: FieldProps & Omit<ComponentProps<"textarea">, "name">) {
++export function TextArea({ name, label, hint, className, defaultValue, ...rest }: FieldProps & Omit<ComponentProps<"textarea">, "name">) {
+   const { error, value } = useField(name);
+   const id = `f-${name}`;
+   return (
+@@ -126,7 +126,7 @@ export function TextArea({ name, label, hint, className, ...rest }: FieldProps &
+       <textarea
+         id={id}
+         name={name}
+-        defaultValue={value ?? (rest.defaultValue as string | undefined)}
++        defaultValue={value ?? (defaultValue as string | undefined)}
+         aria-invalid={!!error}
+         className={cn(inputBase, "min-h-28 py-2.5", error ? "border-danger" : "border-border-strong")}
+         {...rest}
+@@ -143,6 +143,7 @@ export function SelectField({
+   hint,
+   className,
+   options,
++  defaultValue,
+   ...rest
+ }: FieldProps & Omit<ComponentProps<"select">, "name"> & { options: { value: string; label: string }[] }) {
+   const { error, value } = useField(name);
+@@ -155,7 +156,7 @@ export function SelectField({
+       <select
+         id={id}
+         name={name}
+-        defaultValue={value ?? (rest.defaultValue as string | undefined)}
++        defaultValue={value ?? (defaultValue as string | undefined)}
+         aria-invalid={!!error}
+         className={cn(inputBase, "h-11", error ? "border-danger" : "border-border-strong")}
+         {...rest}
+diff --git a/src/lib/content/access.ts b/src/lib/content/access.ts
+new file mode 100644
+index 0000000..94c8bdb
+--- /dev/null
++++ b/src/lib/content/access.ts
+@@ -0,0 +1,11 @@
++/**
++ * Which staff panel a shared page is rendered under:
++ * "muellim" (teacher, /muellim/...) or "idare" (administrator, /idare/...).
++ */
++export type Area = "muellim" | "idare";
++
++export const AREAS: readonly Area[] = ["muellim", "idare"];
++
++export function isArea(v: unknown): v is Area {
++  return v === "muellim" || v === "idare";
++}
+diff --git a/src/lib/content/action-utils.ts b/src/lib/content/action-utils.ts
+new file mode 100644
+index 0000000..64c5992
+--- /dev/null
++++ b/src/lib/content/action-utils.ts
+@@ -0,0 +1,28 @@
++import type { ActionState } from "@/components/ui/action-form";
++import { AuthError } from "@/lib/auth";
++
++const GENERIC_ERROR = "Gözlənilməyən xəta baş verdi. Bir az sonra yenidən cəhd edin.";
++
++/** redirect() / notFound() work by throwing; those must reach Next.js untouched. */
++function isNextControlFlow(e: unknown): boolean {
++  const digest = (e as { digest?: unknown } | null)?.digest;
++  return typeof digest === "string" && (digest.startsWith("NEXT_") || digest === "DYNAMIC_SERVER_USAGE");
++}
++
++/**
++ * Wraps the body of a Server Action so it always resolves to an ActionState:
++ * auth problems and unexpected errors become a user-facing message instead of a crashed request.
++ * Expected business errors should be returned by the callback itself (e.g. `{ error: "..." }`).
++ */
++export async function run(fn: () => Promise<ActionState>): Promise<ActionState> {
++  try {
++    return await fn();
++  } catch (e) {
++    if (isNextControlFlow(e)) throw e;
++    if (e instanceof AuthError) {
++      return { error: e.status === 401 ? "Daxil olmaq tələb olunur." : "Bu əməliyyat üçün icazəniz yoxdur." };
++    }
++    console.error("server action failed", e);
++    return { error: GENERIC_ERROR };
++  }
++}
