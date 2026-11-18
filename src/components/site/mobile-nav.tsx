@@ -8,12 +8,15 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { NAV_ITEMS } from "./nav-items";
 
-export function DesktopNavLinks() {
+type ExtraItem = { href: string; label: string };
+
+export function DesktopNavLinks({ extra }: { extra?: ExtraItem }) {
   const pathname = usePathname();
+  const items: readonly ExtraItem[] = extra ? [...NAV_ITEMS.filter((i) => i.href !== "/"), extra] : NAV_ITEMS.filter((i) => i.href !== "/");
   return (
     <nav aria-label="Əsas naviqasiya" className="hidden items-center gap-0.5 xl:flex">
       {/* The logo already links home, so "Ana səhifə" is only in the mobile menu and footer. */}
-      {NAV_ITEMS.filter((item) => item.href !== "/").map((item) => {
+      {items.map((item) => {
         const active = pathname.startsWith(item.href);
         return (
           <Link
@@ -30,7 +33,7 @@ export function DesktopNavLinks() {
   );
 }
 
-export function MobileNav({ authed, panelHref }: { authed: boolean; panelHref?: string }) {
+export function MobileNav({ authed, panelHref, extra }: { authed: boolean; panelHref?: string; extra?: ExtraItem }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   // Close the menu on navigation (state adjusted during render, not in an effect).
@@ -79,7 +82,7 @@ export function MobileNav({ authed, panelHref }: { authed: boolean; panelHref?: 
               </div>
             )}
             <ul className="space-y-1">
-              {NAV_ITEMS.map((item) => (
+              {(extra ? [...NAV_ITEMS, extra] : NAV_ITEMS).map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="block rounded-xl px-4 py-3 text-lg font-semibold hover:bg-surface-2">
                     {item.label}

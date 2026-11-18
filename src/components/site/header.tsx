@@ -8,13 +8,17 @@ import { DesktopNavLinks, MobileNav } from "./mobile-nav";
 
 export const homeFor = (role: string) => (role === "admin" ? "/idare" : role === "teacher" ? "/muellim" : "/panel");
 
+export const liveFor = (role: string) => `${homeFor(role)}/canli-dersler`;
+
 export async function SiteHeader() {
   const user = await getCurrentUser();
+  // Live lessons are private to signed-in users, so the link is role-specific and hidden for visitors.
+  const extra = user ? { href: liveFor(user.role), label: "Canlı dərslər" } : undefined;
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur">
       <div className="mx-auto flex h-[65px] max-w-7xl items-center justify-between gap-3 px-5 sm:px-8">
         <Logo />
-        <DesktopNavLinks />
+        <DesktopNavLinks extra={extra} />
         <div className="flex items-center gap-1.5">
           <Link href="/axtaris" aria-label="Axtarış" className="inline-flex h-10 w-10 items-center justify-center rounded-xl hover:bg-surface-2 2xl:hidden"><Search size={18} /></Link>
           <form action="/axtaris" role="search" className="hidden 2xl:block">
@@ -39,7 +43,7 @@ export async function SiteHeader() {
               </Link>
             </div>
           )}
-          <MobileNav authed={!!user} panelHref={user ? homeFor(user.role) : undefined} />
+          <MobileNav authed={!!user} panelHref={user ? homeFor(user.role) : undefined} extra={extra} />
         </div>
       </div>
     </header>
