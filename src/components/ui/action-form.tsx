@@ -83,7 +83,7 @@ function useField(name: string) {
 const inputBase =
   "w-full rounded-xl border bg-surface px-3.5 text-[0.95rem] text-text placeholder:text-muted/70 transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
 
-export function Field({ name, label, hint, className, ...input }: FieldProps & Omit<ComponentProps<"input">, "name">) {
+export function Field({ name, label, hint, className, defaultValue, ...input }: FieldProps & Omit<ComponentProps<"input">, "name">) {
   const { error, value } = useField(name);
   const id = `f-${name}`;
   const isSecret = input.type === "password";
@@ -95,7 +95,7 @@ export function Field({ name, label, hint, className, ...input }: FieldProps & O
       <input
         id={id}
         name={name}
-        defaultValue={isSecret ? undefined : (value ?? (input.defaultValue as string | undefined))}
+        defaultValue={isSecret ? undefined : (value ?? (defaultValue as string | undefined))}
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-err` : hint ? `${id}-hint` : undefined}
         className={cn(inputBase, "h-11", error ? "border-danger" : "border-border-strong")}
@@ -115,7 +115,7 @@ export function Field({ name, label, hint, className, ...input }: FieldProps & O
   );
 }
 
-export function TextArea({ name, label, hint, className, ...rest }: FieldProps & Omit<ComponentProps<"textarea">, "name">) {
+export function TextArea({ name, label, hint, className, defaultValue, ...rest }: FieldProps & Omit<ComponentProps<"textarea">, "name">) {
   const { error, value } = useField(name);
   const id = `f-${name}`;
   return (
@@ -126,7 +126,7 @@ export function TextArea({ name, label, hint, className, ...rest }: FieldProps &
       <textarea
         id={id}
         name={name}
-        defaultValue={value ?? (rest.defaultValue as string | undefined)}
+        defaultValue={value ?? (defaultValue as string | undefined)}
         aria-invalid={!!error}
         className={cn(inputBase, "min-h-28 py-2.5", error ? "border-danger" : "border-border-strong")}
         {...rest}
@@ -143,6 +143,7 @@ export function SelectField({
   hint,
   className,
   options,
+  defaultValue,
   ...rest
 }: FieldProps & Omit<ComponentProps<"select">, "name"> & { options: { value: string; label: string }[] }) {
   const { error, value } = useField(name);
@@ -155,7 +156,7 @@ export function SelectField({
       <select
         id={id}
         name={name}
-        defaultValue={value ?? (rest.defaultValue as string | undefined)}
+        defaultValue={value ?? (defaultValue as string | undefined)}
         aria-invalid={!!error}
         className={cn(inputBase, "h-11", error ? "border-danger" : "border-border-strong")}
         {...rest}
