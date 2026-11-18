@@ -14,7 +14,7 @@ export function DesktopNavLinks({ extra }: { extra?: ExtraItem }) {
   const pathname = usePathname();
   const items: readonly ExtraItem[] = extra ? [...NAV_ITEMS.filter((i) => i.href !== "/"), extra] : NAV_ITEMS.filter((i) => i.href !== "/");
   return (
-    <nav aria-label="Əsas naviqasiya" className="hidden items-center gap-0.5 xl:flex">
+    <nav aria-label="Əsas naviqasiya" className="hidden min-w-0 items-center gap-0 xl:flex">
       {/* The logo already links home, so "Ana səhifə" is only in the mobile menu and footer. */}
       {items.map((item) => {
         const active = pathname.startsWith(item.href);
@@ -23,7 +23,7 @@ export function DesktopNavLinks({ extra }: { extra?: ExtraItem }) {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={cn("rounded-lg px-2 py-2 text-sm font-semibold whitespace-nowrap transition hover:bg-surface-2", active ? "text-accent-ink" : "text-text")}
+            className={cn("rounded-lg px-1.5 py-2 text-[0.82rem] font-semibold whitespace-nowrap transition hover:bg-surface-2", active ? "text-accent-ink" : "text-text")}
           >
             {item.label}
           </Link>
