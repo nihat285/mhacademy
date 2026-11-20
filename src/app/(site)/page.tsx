@@ -1,3 +1,6 @@
+import { DashboardLive } from "@/components/site/dashboard-live";
+import { getStudentStats } from "@/lib/stats/student-stats";
+import { getCurrentUser } from "@/lib/session";
 import { ArrowRight, BarChart3, CalendarClock, CheckCircle2, ClipboardCheck, Clock, Lightbulb, MonitorPlay, Quote, ShieldCheck, Timer } from "lucide-react";
 import Link from "next/link";
 import { CourseCard, ExamCard, LessonCard, SubjectCard, TeacherCard } from "@/components/cards";
