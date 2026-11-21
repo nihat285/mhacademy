@@ -6,7 +6,8 @@ import {
 import { notify } from "@/lib/notify";
 import { gradeAttempt, type GradableQuestion, type SubmittedAnswer } from "@/lib/scoring";
 import { bakuDay, isReleased, nextStreak } from "./release";
-import { shuffle } from "./shuffle";
+import { questionPassageLinks, questionPassages } from "@/db/passage-schema";
+import { groupContiguous, shuffle, shuffleGrouped } from "./shuffle";
 
 /**
  * Exam engine. Everything that decides who may sit an exam, until when, and what the score is lives here and runs on
@@ -75,7 +76,14 @@ export async function startAttempt(userId: string, examId: string, now = new Dat
     .orderBy(asc(examQuestions.orderIndex));
   if (qrows.length === 0) throw new ExamError("empty", "Bu sınaqda hələ sual yoxdur.");
 
-  const orderedIds = exam.shuffleQuestions ? shuffle(qrows.map((q) => q.id)) : qrows.map((q) => q.id);
+  // Questions that share a passage (reading text / audio) always stay together so the passage is read once.
+  const links = await db
+    .select({ questionId: questionPassageLinks.questionId, passageId: questionPassageLinks.passageId })
+    .from(questionPassageLinks)
+    .where(inArray(questionPassageLinks.questionId, qrows.map((q) => q.id)));
+  const passageOf = new Map(links.map((l) => [l.questionId, l.passageId]));
+  const baseIds = qrows.map((q) => q.id);
+  const orderedIds = exam.shuffleQuestions ? shuffleGrouped(baseIds, (id) => passageOf.get(id)) : groupContiguous(baseIds, (id) => passageOf.get(id));
   const opts = await db
     .select({ id: questionOptions.id, questionId: questionOptions.questionId })
     .from(questionOptions)
@@ -253,7 +261,17 @@ export interface TakingQuestion {
   text: string;
   imageUrl: string | null;
   points: number;
+  /** Passage this question belongs to (see `TakingState.passages`), or null. */
+  passageId: string | null;
   options: { id: string; text: string }[];
+}
+/** Passage payload for the exam screen. Never includes the transcript. */
+export interface TakingPassage {
+  id: string;
+  title: string;
+  body: string | null;
+  audioUrl: string | null;
+  maxPlays: number | null;
 }
 export interface TakingState {
   title: string;
@@ -261,6 +279,7 @@ export interface TakingState {
   deadlineMs: number;
   serverNowMs: number;
   questions: TakingQuestion[];
+  passages: TakingPassage[];
   answers: Record<string, { optionId: string | null; numeric: string | null; flagged: boolean }>;
 }
 
@@ -277,12 +296,19 @@ export async function getAttemptForTaking(userId: string, attemptId: string, now
     return "finished";
   }
   const [exam] = await db.select({ title: exams.title }).from(exams).where(eq(exams.id, attempt.examId)).limit(1);
-  const [qrows, orows, arows, overrides] = await Promise.all([
+  const [qrows, orows, arows, overrides, plinks] = await Promise.all([
     db.select({ id: questions.id, type: questions.type, text: questions.text, imageUrl: questions.imageUrl, points: questions.points }).from(questions).where(inArray(questions.id, attempt.questionOrder)),
     db.select({ id: questionOptions.id, text: questionOptions.text }).from(questionOptions).where(inArray(questionOptions.questionId, attempt.questionOrder)),
     db.select().from(attemptAnswers).where(eq(attemptAnswers.attemptId, attemptId)),
     db.select({ questionId: examQuestions.questionId, pointsOverride: examQuestions.pointsOverride }).from(examQuestions).where(eq(examQuestions.examId, attempt.examId)),
+    db.select({ questionId: questionPassageLinks.questionId, passageId: questionPassageLinks.passageId }).from(questionPassageLinks).where(inArray(questionPassageLinks.questionId, attempt.questionOrder)),
   ]);
+  const passageIds = [...new Set(plinks.map((l) => l.passageId))];
+  // Explicit column list: the transcript is deliberately NOT selected.
+  const prows = passageIds.length
+    ? await db.select({ id: questionPassages.id, title: questionPassages.title, body: questionPassages.body, audioUrl: questionPassages.audioUrl, maxPlays: questionPassages.maxPlays }).from(questionPassages).where(inArray(questionPassages.id, passageIds))
+    : [];
+  const passageOf = new Map(plinks.map((l) => [l.questionId, l.passageId]));
   const q = new Map(qrows.map((x) => [x.id, x]));
   const o = new Map(orows.map((x) => [x.id, x]));
   const po = new Map(overrides.map((x) => [x.questionId, x.pointsOverride]));
@@ -290,7 +316,7 @@ export async function getAttemptForTaking(userId: string, attemptId: string, now
     const row = q.get(id);
     if (!row) return [];
     return [{
-      id, type: row.type, text: row.text, imageUrl: row.imageUrl, points: Number(po.get(id) ?? row.points),
+      id, type: row.type, text: row.text, imageUrl: row.imageUrl, points: Number(po.get(id) ?? row.points), passageId: passageOf.get(id) ?? null,
       options: (attempt.optionOrder[id] ?? []).flatMap((oid) => (o.get(oid) ? [o.get(oid)!] : [])),
     }];
   });
@@ -300,6 +326,7 @@ export async function getAttemptForTaking(userId: string, attemptId: string, now
     deadlineMs: attempt.deadlineAt.getTime(),
     serverNowMs: now.getTime(),
     questions: list,
+    passages: prows,
     answers: Object.fromEntries(arows.map((a) => [a.questionId, { optionId: a.selectedOptionId, numeric: a.numericValue === null ? null : String(Number(a.numericValue)), flagged: a.flagged }])),
   };
 }

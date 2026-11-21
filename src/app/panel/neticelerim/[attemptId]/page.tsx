@@ -157,17 +157,18 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
         {shown.length === 0 ? (
           <Card className="p-8 text-center"><CheckCircle2 className="mx-auto text-success" size={36} /><p className="mt-2 font-display text-xl font-semibold">Səhvsiz! Bütün suallara düzgün cavab verdiniz.</p></Card>
         ) : (
-          <ol className="space-y-4">{shown.map((r) => <ReviewCard key={r.questionId} r={r} reviewAllowed={reviewAllowed} />)}</ol>
+          <ol className="space-y-4">{shown.map((r, i) => <ReviewCard key={r.questionId} r={r} reviewAllowed={reviewAllowed} showPassage={!!r.passage && shown[i - 1]?.passage?.id !== r.passage.id} />)}</ol>
         )}
       </section>
     </div>
   );
 }
 
-function ReviewCard({ r, reviewAllowed }: { r: ReviewItem; reviewAllowed: boolean }) {
+function ReviewCard({ r, reviewAllowed, showPassage }: { r: ReviewItem; reviewAllowed: boolean; showPassage: boolean }) {
   const s = STATUS[r.status];
   return (
     <li>
+      {showPassage && r.passage && <PassageReview p={r.passage} />}
       <Card className="print-card p-5">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={s.tone}><s.Icon size={13} /> {s.label}</Badge>
@@ -214,5 +215,21 @@ function ReviewCard({ r, reviewAllowed }: { r: ReviewItem; reviewAllowed: boolea
         )}
       </Card>
     </li>
+  );
+}
+
+function PassageReview({ p }: { p: NonNullable<ReviewItem["passage"]> }) {
+  return (
+    <Card className="print-card mb-3 border-accent/40 p-5">
+      <h3 className="font-sans text-sm font-bold text-accent-ink">{p.title}</h3>
+      {p.audioUrl && <audio src={p.audioUrl} controls preload="none" className="mt-3 w-full" />}
+      {p.body && <div className="mt-3 max-h-80 overflow-y-auto whitespace-pre-line rounded-xl bg-bg p-4 text-[0.95rem] leading-relaxed">{p.body}</div>}
+      {p.transcript && (
+        <details className="mt-3 rounded-xl border border-border p-3 text-sm">
+          <summary className="cursor-pointer font-semibold">Audionun transkripti</summary>
+          <p className="mt-2 whitespace-pre-line leading-relaxed text-muted">{p.transcript}</p>
+        </details>
+      )}
+    </Card>
   );
 }

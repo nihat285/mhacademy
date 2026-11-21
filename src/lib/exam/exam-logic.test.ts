@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bakuDay, isReleased, nextStreak } from "./release";
-import { shuffle } from "./shuffle";
+import { groupContiguous, shuffle, shuffleGrouped } from "./shuffle";
 
 const ends = new Date("2026-11-10T12:00:00Z");
 
@@ -41,4 +41,24 @@ describe("streak", () => {
     expect(nextStreak("2026-12-31", 2, "2027-01-01")).toBe(3);
   });
   it("uses the Baku calendar day", () => expect(bakuDay(new Date("2026-11-06T21:00:00Z"))).toBe("2026-11-07"));
+});
+
+
+describe("passage grouping", () => {
+  const g: Record<string, string | undefined> = { a: "P1", b: "P1", c: undefined, d: "P2", e: "P2", f: "P1" };
+  const ids = ["a", "c", "d", "b", "e", "f"];
+  it("groupContiguous keeps passage questions together, in first-appearance order", () => {
+    expect(groupContiguous(ids, (x) => g[x])).toEqual(["a", "b", "f", "c", "d", "e"]);
+  });
+  it("shuffleGrouped never splits a passage and keeps all questions", () => {
+    for (let i = 0; i < 200; i++) {
+      const out = shuffleGrouped(ids, (x) => g[x]);
+      expect([...out].sort()).toEqual([...ids].sort());
+      const pos = (k: string) => out.indexOf(k);
+      expect(Math.abs(pos("a") - pos("b"))).toBe(1);
+      expect(pos("f")).toBe(pos("b") + 1);
+      expect(Math.abs(pos("d") - pos("e"))).toBe(1);
+      expect(pos("a")).toBeLessThan(pos("b"));
+    }
+  });
 });

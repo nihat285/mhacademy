@@ -11,9 +11,9 @@ import path from "node:path";
  *    Set STORAGE_DRIVER=s3 plus STORAGE_BUCKET, STORAGE_REGION, STORAGE_PUBLIC_BASE_URL (and optionally
  *    STORAGE_ENDPOINT, STORAGE_ACCESS_KEY_ID, STORAGE_SECRET_ACCESS_KEY). See README.
  */
-export type UploadKind = "image" | "document";
+export type UploadKind = "image" | "document" | "audio";
 
-const LIMITS: Record<UploadKind, number> = { image: 3 * 1024 * 1024, document: 15 * 1024 * 1024 };
+const LIMITS: Record<UploadKind, number> = { image: 3 * 1024 * 1024, document: 15 * 1024 * 1024, audio: 25 * 1024 * 1024 };
 
 interface Sniffed { ext: string; mime: string; kind: UploadKind }
 
@@ -22,6 +22,12 @@ function sniff(b: Buffer): Sniffed | null {
   if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { ext: "jpg", mime: "image/jpeg", kind: "image" };
   if (b.length >= 12 && b.subarray(0, 4).toString("ascii") === "RIFF" && b.subarray(8, 12).toString("ascii") === "WEBP") return { ext: "webp", mime: "image/webp", kind: "image" };
   if (b.length >= 5 && b.subarray(0, 5).toString("ascii") === "%PDF-") return { ext: "pdf", mime: "application/pdf", kind: "document" };
+  // Audio: MP3 (ID3 tag or MPEG frame sync), Ogg, WAV, M4A/MP4 audio.
+  if (b.length >= 3 && b.subarray(0, 3).toString("ascii") === "ID3") return { ext: "mp3", mime: "audio/mpeg", kind: "audio" };
+  if (b.length >= 2 && b[0] === 0xff && (b[1] & 0xe0) === 0xe0 && (b[1] & 0x06) !== 0) return { ext: "mp3", mime: "audio/mpeg", kind: "audio" };
+  if (b.length >= 4 && b.subarray(0, 4).toString("ascii") === "OggS") return { ext: "ogg", mime: "audio/ogg", kind: "audio" };
+  if (b.length >= 12 && b.subarray(0, 4).toString("ascii") === "RIFF" && b.subarray(8, 12).toString("ascii") === "WAVE") return { ext: "wav", mime: "audio/wav", kind: "audio" };
+  if (b.length >= 12 && b.subarray(4, 8).toString("ascii") === "ftyp" && ["M4A ", "mp42", "isom", "M4B "].includes(b.subarray(8, 12).toString("ascii"))) return { ext: "m4a", mime: "audio/mp4", kind: "audio" };
   return null;
 }
 
@@ -35,8 +41,15 @@ export async function saveUpload(file: File, kind: UploadKind, folder: string): 
   if (file.size > LIMITS[kind]) throw new UploadError(`Fayl çox böyükdür (maksimum ${Math.round(LIMITS[kind] / 1024 / 1024)} MB).`);
   const buf = Buffer.from(await file.arrayBuffer());
   const type = sniff(buf);
-  const allowed = kind === "image" ? type?.kind === "image" : type !== null;
-  if (!type || !allowed) throw new UploadError(kind === "image" ? "Yalnız PNG, JPEG və ya WebP şəkilləri qəbul olunur." : "Yalnız PDF, PNG, JPEG və ya WebP faylları qəbul olunur.");
+  // "document" keeps its historical meaning: PDF or image. Audio is only accepted for the "audio" kind.
+  const allowed = kind === "image" ? type?.kind === "image" : kind === "audio" ? type?.kind === "audio" : type !== null && type.kind !== "audio";
+  if (!type || !allowed) {
+    throw new UploadError(
+      kind === "image" ? "Yalnız PNG, JPEG və ya WebP şəkilləri qəbul olunur."
+      : kind === "audio" ? "Yalnız MP3, M4A, OGG və ya WAV audio faylları qəbul olunur."
+      : "Yalnız PDF, PNG, JPEG və ya WebP faylları qəbul olunur.",
+    );
+  }
 
   const safeFolder = folder.replace(/[^a-z0-9-]/gi, "");
   const key = `${safeFolder}/${Date.now()}-${randomBytes(8).toString("hex")}.${type.ext}`;

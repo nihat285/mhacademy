@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, isNotNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { attemptAnswers, examAttempts, exams, lessons, questionOptions, questions, subjects, topics } from "@/db/schema";
+import { passagesForReview } from "@/lib/passages/service";
 import { isReleased } from "./release";
 
 export interface ReviewOption { id: string; text: string; chosen: boolean; correct: boolean; whyWrong: string | null }
@@ -25,7 +26,10 @@ export interface ReviewItem {
   steps: string[] | null;
   whyWrong: string | null;
   lesson: { slug: string; title: string } | null;
+  passage: ReviewPassage | null;
 }
+/** Shown with the review. The transcript is included only when the exam allows answer review. */
+export interface ReviewPassage { id: string; title: string; body: string | null; audioUrl: string | null; transcript: string | null }
 export interface Breakdown { name: string; correct: number; total: number; percent: number }
 
 export type AttemptResult =
@@ -67,7 +71,7 @@ export async function getAttemptResult(userId: string, attemptId: string, now = 
 
   const reviewAllowed = exam.e.showExplanations;
   const qids = attempt.questionOrder;
-  const [qrows, answers, opts] = await Promise.all([
+  const [qrows, answers, opts, pass] = await Promise.all([
     db
       .select({ q: questions, topicName: topics.name, subjectName: subjects.name })
       .from(questions)
@@ -76,7 +80,9 @@ export async function getAttemptResult(userId: string, attemptId: string, now = 
       .where(inArray(questions.id, qids)),
     db.select().from(attemptAnswers).where(eq(attemptAnswers.attemptId, attemptId)),
     db.select().from(questionOptions).where(inArray(questionOptions.questionId, qids)).orderBy(asc(questionOptions.orderIndex)),
+    passagesForReview(qids),
   ]);
+  const passageById = new Map(pass.passages.map((p) => [p.id, p]));
   const qm = new Map(qrows.map((r) => [r.q.id, r]));
   const am = new Map(answers.map((a) => [a.questionId, a]));
 
@@ -115,6 +121,10 @@ export async function getAttemptResult(userId: string, attemptId: string, now = 
       steps: reviewAllowed ? r.q.steps : null,
       whyWrong: reviewAllowed && status !== "correct" && chosen ? chosen.whyWrong : null,
       lesson: lesson ? { slug: lesson.slug, title: lesson.title } : null,
+      passage: (() => {
+        const p = passageById.get(pass.byQuestion.get(id) ?? "");
+        return p ? { id: p.id, title: p.title, body: p.body, audioUrl: p.audioUrl, transcript: reviewAllowed ? p.transcript : null } : null;
+      })(),
     }];
   });
 

@@ -7,6 +7,7 @@ import { saveAnswerAction, submitAttemptAction } from "@/app/actions/exam";
 import { cn } from "@/lib/cn";
 import { formatClock } from "@/lib/format";
 import type { TakingState } from "@/lib/exam/engine";
+import { PassagePanel } from "@/components/passages/passage-panel";
 
 type QState = { optionId: string | null; numeric: string | null; flagged: boolean };
 type SaveStatus = "saved" | "saving" | "retry";
@@ -173,6 +174,7 @@ export function ExamRunner({ state }: { state: TakingState }) {
   }, [questions.length]);
 
   const q = questions[idx];
+  const passage = q.passageId ? state.passages.find((p) => p.id === q.passageId) ?? null : null;
   const a = answers[q.id];
   const isAnswered = (id: string) => answers[id].optionId !== null || (answers[id].numeric !== null && answers[id].numeric!.trim() !== "");
   const counts = useMemo(() => {
@@ -220,6 +222,7 @@ export function ExamRunner({ state }: { state: TakingState }) {
 
       <div className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_17rem]">
         <main id="main" className="min-w-0">
+          {passage && <PassagePanel key={passage.id} passage={passage} attemptId={attemptId} />}
           <section aria-labelledby="q-title" className="rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-7">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <p id="q-title" className="text-sm font-bold text-accent-ink">Sual {idx + 1}</p>

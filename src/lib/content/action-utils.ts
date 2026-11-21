@@ -26,7 +26,7 @@ export const isUuid = (v: string) => UUID_RE.test(v);
 export async function optionalUpload(
   fd: FormData,
   field: string,
-  kind: "image" | "document",
+  kind: "image" | "document" | "audio",
   folder: string,
 ): Promise<null | { url: string; mime: string; size: number; originalName: string } | { error: string }> {
   const f = fd.get(field);
