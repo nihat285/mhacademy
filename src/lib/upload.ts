@@ -31,6 +31,11 @@ function sniff(b: Buffer): Sniffed | null {
   return null;
 }
 
+/** True when the first bytes look like MP3 / Ogg / WAV / M4A. Used to verify files that were uploaded straight to storage. */
+export function looksLikeAudio(b: Buffer): boolean {
+  return sniff(b)?.kind === "audio";
+}
+
 export class UploadError extends Error {}
 
 export interface StoredFile { url: string; mime: string; size: number; originalName: string }

@@ -1,5 +1,6 @@
 "use client";
 
+import { upload } from "@vercel/blob/client";
 import { useState } from "react";
 import { createPassageAction, linkQuestionsAction, updatePassageAction } from "@/app/actions/passages";
 import { CField, CForm, CSelect, CTextArea, FieldError } from "@/components/content/form-kit";
@@ -10,7 +11,7 @@ export interface PassageFormValues {
 }
 
 /** Uploads the audio through /api/passages/audio, then the form submits only the returned URL. */
-function AudioField({ currentUrl }: { currentUrl?: string | null }) {
+function AudioField({ currentUrl, useBlob }: { currentUrl?: string | null; useBlob: boolean }) {
   const [url, setUrl] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -20,14 +21,22 @@ function AudioField({ currentUrl }: { currentUrl?: string | null }) {
     if (!file) { setUrl(""); return; }
     setBusy(true);
     try {
-      const fd = new FormData();
-      fd.set("file", file);
-      const res = await fetch("/api/passages/audio", { method: "POST", body: fd });
-      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-      if (!res.ok || !data.url) { setUrl(""); setErr(data.error ?? "Fayl yüklənmədi."); }
-      else setUrl(data.url);
-    } catch {
-      setUrl(""); setErr("Bağlantı xətası. Yenidən cəhd edin.");
+      if (file.size > 25 * 1024 * 1024) { setUrl(""); setErr("Fayl 25 MB limitini aşır."); return; }
+      if (useBlob) {
+        const ext = /\.(mp3|ogg|wav|m4a)$/i.exec(file.name)?.[1]?.toLowerCase();
+        if (!ext) { setUrl(""); setErr("Yalnız MP3, M4A, OGG və ya WAV faylları qəbul olunur."); return; }
+        const blob = await upload(`passage-audio/${Date.now()}.${ext}`, file, { access: "public", handleUploadUrl: "/api/passages/audio", multipart: file.size > 10 * 1024 * 1024 });
+        setUrl(blob.url);
+      } else {
+        const fd = new FormData();
+        fd.set("file", file);
+        const res = await fetch("/api/passages/audio", { method: "POST", body: fd });
+        const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+        if (!res.ok || !data.url) { setUrl(""); setErr(data.error ?? "Fayl yüklənmədi."); }
+        else setUrl(data.url);
+      }
+    } catch (e) {
+      setUrl(""); setErr(e instanceof Error && e.message && !/fetch|network/i.test(e.message) ? e.message : "Yükləmə alınmadı. Faylın növünü yoxlayıb yenidən cəhd edin.");
     } finally {
       setBusy(false);
     }
@@ -57,7 +66,7 @@ function AudioField({ currentUrl }: { currentUrl?: string | null }) {
   );
 }
 
-export function PassageForm({ area, subjects, values = {} }: { area: "muellim" | "idare"; subjects: { id: string; name: string }[]; values?: PassageFormValues }) {
+export function PassageForm({ area, subjects, values = {}, useBlob = false }: { area: "muellim" | "idare"; subjects: { id: string; name: string }[]; values?: PassageFormValues; useBlob?: boolean }) {
   const editing = !!values.id;
   return (
     <CForm action={editing ? updatePassageAction : createPassageAction} className="space-y-5">
@@ -71,7 +80,7 @@ export function PassageForm({ area, subjects, values = {} }: { area: "muellim" |
         options={[{ value: "", label: "Fənn seçilməyib" }, ...subjects.map((s) => ({ value: s.id, label: s.name }))]}
       />
       <CTextArea name="body" label="Mətn (oxu parçası)" defaultValue={values.body} rows={10} maxLength={20000} hint="Sınaqda suallarla yanaşı göstərilir. Yalnız audio üçün boş buraxın." />
-      <AudioField currentUrl={values.audioUrl} />
+      <AudioField currentUrl={values.audioUrl} useBlob={useBlob} />
       <CField
         name="maxPlays" label="Dinləmə limiti (könüllü)" type="number" min={1} max={10} defaultValue={values.maxPlays ? String(values.maxPlays) : ""}
         hint="Məsələn 2 — şagird audionu ən çox 2 dəfə başlada bilər. Boş = limitsiz. Limit brauzerdə tətbiq olunur."

@@ -42,10 +42,16 @@ export function playsLeft(maxPlays: number | null, used: number): number | null 
  * The audio url comes back from the browser (hidden field), so it is only accepted when it points at the folder our
  * own upload route writes to: the local `/uploads/passage-audio/…` or `<STORAGE_PUBLIC_BASE_URL>/passage-audio/…`.
  */
+const BLOB_AUDIO = /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/passage-audio\/[A-Za-z0-9._-]{1,120}\.(mp3|ogg|wav|m4a)$/;
+
+export const isBlobAudioUrl = (url: string) => BLOB_AUDIO.test(url);
+
 export function isOwnAudioUrl(url: string, publicBase?: string): boolean {
   const file = /^[0-9]+-[0-9a-f]{16}\.(mp3|ogg|wav|m4a)$/;
   const local = "/uploads/passage-audio/";
   if (url.startsWith(local)) return file.test(url.slice(local.length));
+  // Vercel Blob (client upload): https://<store>.public.blob.vercel-storage.com/passage-audio/<name>.<ext>
+  if (BLOB_AUDIO.test(url)) return true;
   if (publicBase) {
     const prefix = `${publicBase.replace(/\/$/, "")}/passage-audio/`;
     if (url.startsWith(prefix)) return file.test(url.slice(prefix.length));

@@ -15,6 +15,9 @@ import { can } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { LinkQuestionsForm, PassageForm } from "./passage-form";
 
+/** Large audio goes straight to Vercel Blob when it is configured; otherwise through our own upload route. */
+const blobEnabled = () => !!process.env.BLOB_READ_WRITE_TOKEN;
+
 const NO_PERM = <NoPermission title="Parçalar üçün icazə yoxdur" what="Mətn və audio parçaları idarə etmək" />;
 
 async function staffUser() {
@@ -70,7 +73,7 @@ export async function PassageNew({ area }: { area: Area }) {
     <>
       <Link href={`/${area}/metnler`} className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-text"><ArrowLeft size={16} /> Parçalar</Link>
       <PageHeader title="Yeni parça" intro="Yaradandan sonra suallar bu parçaya bağlanır." />
-      <Card><div className="p-5"><PassageForm area={area} subjects={subjects} /></div></Card>
+      <Card><div className="p-5"><PassageForm area={area} subjects={subjects} useBlob={blobEnabled()} /></div></Card>
     </>
   );
 }
@@ -96,7 +99,7 @@ export async function PassageDetail({ area, id }: { area: Area; id: string }) {
         <Card>
           <CardHeader title="Parçanın məzmunu" />
           <div className="p-5">
-            <PassageForm area={area} subjects={subjects} values={{ id: p.id, title: p.title, subjectId: p.subjectId ?? "", body: p.body ?? "", transcript: p.transcript ?? "", maxPlays: p.maxPlays, audioUrl: p.audioUrl }} />
+            <PassageForm area={area} subjects={subjects} values={{ id: p.id, title: p.title, subjectId: p.subjectId ?? "", body: p.body ?? "", transcript: p.transcript ?? "", maxPlays: p.maxPlays, audioUrl: p.audioUrl }} useBlob={blobEnabled()} />
           </div>
         </Card>
         <div className="space-y-6">

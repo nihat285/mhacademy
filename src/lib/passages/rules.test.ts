@@ -44,5 +44,9 @@ describe("isOwnAudioUrl", () => {
     expect(isOwnAudioUrl("/uploads/passage-audio/../../x.mp3")).toBe(false);
     expect(isOwnAudioUrl("/uploads/questions/1-0123456789abcdef.mp3")).toBe(false);
     expect(isOwnAudioUrl("javascript:alert(1)")).toBe(false);
+    expect(isOwnAudioUrl("https://abc123.public.blob.vercel-storage.com/passage-audio/1730000-AbCd.mp3")).toBe(true);
+    expect(isOwnAudioUrl("https://abc123.public.blob.vercel-storage.com/other/1730000.mp3")).toBe(false);
+    expect(isOwnAudioUrl("https://abc123.public.blob.vercel-storage.com.evil.com/passage-audio/a.mp3")).toBe(false);
+    expect(isOwnAudioUrl("http://abc123.public.blob.vercel-storage.com/passage-audio/a.mp3")).toBe(false);
   });
 });
