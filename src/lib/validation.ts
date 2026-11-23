@@ -83,7 +83,8 @@ export const profileSchema = z.object({
 
 /** Only same-site relative paths are allowed as post-login redirects (prevents open redirects). */
 export function safeNext(next: string | null | undefined, fallback = "/panel"): string {
-  // Control characters (tab/newline) are stripped by browsers, so "/\t/evil.com" would become "//evil.com".
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\") || /[\u0000-\u001f\u007f\\]/.test(next)) return fallback;
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
+  // Browsers drop tabs/newlines inside URLs ("/\t/evil.com" would become "//evil.com"), so control characters are rejected.
+  if (/[\u0000-\u001f\u007f\\]/.test(next)) return fallback;
   return next;
 }
