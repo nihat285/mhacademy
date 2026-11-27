@@ -1,79 +1,123 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
-import { db } from "@/db";
-import { lessonMaterials, lessons } from "@/db/schema";
-import { audit } from "@/lib/audit";
-import { AuthError, assertPermission } from "@/lib/auth";
-import { MAX_MATERIALS_PER_LESSON, MAX_MATERIAL_BYTES, isOwnBlobUrl } from "@/lib/lesson-materials";
-import type { CurrentUser } from "@/lib/session";
+import { redirect } from "next/navigation";
+import { assertPermission } from "@/lib/auth";
+import { run } from "@/lib/content/action-utils";
+import { MaterialError, createMaterial, deleteMaterial, updateMaterial } from "@/lib/materials/service";
+import { isBlobPdfUrl, isUuid, sizeFromContentRange, validateMaterial } from "@/lib/materials/rules";
+import type { ActionState } from "@/components/ui/action-form";
 
-type Res = { ok?: boolean; error?: string };
+const areaOf = (v: unknown) => (v === "idare" ? "idare" : "muellim");
+const text = (fd: FormData, k: string) => String(fd.get(k) ?? "");
+const values = (fd: FormData) => Object.fromEntries([...fd.entries()].filter(([, v]) => typeof v === "string").map(([k, v]) => [k, String(v)]));
 
-const MAX_BYTES = MAX_MATERIAL_BYTES;
-const MAX_PER_LESSON = MAX_MATERIALS_PER_LESSON;
-
-const addSchema = z.object({
-  lessonId: z.uuid(),
-  title: z.string().trim().min(2, "Ad ən azı 2 simvol olmalıdır.").max(120, "Ad çox uzundur."),
-  url: z.string().url().max(1000),
-  size: z.number().int().positive().max(MAX_BYTES, "Fayl 10 MB-dan böyükdür."),
-});
-
-async function actor(): Promise<CurrentUser | Res> {
+/**
+ * The PDF goes browser → Vercel Blob directly (token from /api/materials/upload), so our server never saw it.
+ * Before saving, check the url is ours and the file really starts with "%PDF-"; the size is taken from the response.
+ */
+async function verifyPdf(url: string): Promise<{ size: number | null } | null> {
+  if (!isBlobPdfUrl(url)) return null;
   try {
-    return await assertPermission("lessons.manage");
+    const res = await fetch(url, { headers: { Range: "bytes=0-7" }, cache: "no-store", signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    // Read only the first chunk, never the whole file.
+    const reader = res.body?.getReader();
+    const first = reader ? (await reader.read()).value : undefined;
+    await reader?.cancel().catch(() => {});
+    if (!first || Buffer.from(first).subarray(0, 5).toString("ascii") !== "%PDF-") return null;
+    const len = Number(res.headers.get("content-length"));
+    return { size: sizeFromContentRange(res.headers.get("content-range")) ?? (res.status === 200 && Number.isFinite(len) && len > 0 ? len : null) };
+  } catch {
+    return null;
+  }
+}
+
+async function removeFile(url: string | null) {
+  if (!url || !isBlobPdfUrl(url)) return;
+  try {
+    await del(url);
   } catch (e) {
-    if (e instanceof AuthError) return { error: e.message };
-    throw e;
+    console.error("[material] could not delete old file", e); // storage cleanup is best-effort
   }
 }
-const isRes = (v: CurrentUser | Res): v is Res => "error" in v && !("id" in v);
 
-/** The lesson must exist and belong to the acting teacher (admins: any lesson). */
-async function ownedLesson(u: CurrentUser, lessonId: string) {
-  const [l] = await db.select({ id: lessons.id, teacherId: lessons.teacherId }).from(lessons).where(eq(lessons.id, lessonId)).limit(1);
-  if (!l) return null;
-  return u.role === "admin" || l.teacherId === u.id ? l : null;
+function fail(e: unknown, fd?: FormData): ActionState {
+  if (e instanceof MaterialError) return { error: e.message, values: fd ? values(fd) : undefined };
+  throw e;
 }
 
-export async function addLessonMaterial(input: { lessonId: string; title: string; url: string; size: number }): Promise<Res> {
-  const u = await actor();
-  if (isRes(u)) return u;
-  const parsed = addSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Məlumat yanlışdır." };
-  const { lessonId, title, url, size } = parsed.data;
-  if (!isOwnBlobUrl(url)) return { error: "Fayl ünvanı qəbul olunmur." };
-  if (!(await ownedLesson(u, lessonId))) return { error: "Dərs tapılmadı." };
-  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(lessonMaterials).where(eq(lessonMaterials.lessonId, lessonId));
-  if (n >= MAX_PER_LESSON) return { error: `Bir dərsə ən çox ${MAX_PER_LESSON} material əlavə etmək olar.` };
-  await db.insert(lessonMaterials).values({ lessonId, title, fileUrl: url, mimeType: "application/pdf", sizeBytes: size });
-  await audit(u.id, "lesson.material.add", "lesson", lessonId, { title });
-  revalidatePath(`/muellim/dersler/${lessonId}`);
-  revalidatePath("/dersler");
-  return { ok: true };
+function parse(fd: FormData, hasFile: boolean) {
+  return validateMaterial({
+    title: text(fd, "title"), subjectId: text(fd, "subjectId"), description: text(fd, "description"), grade: text(fd, "grade"),
+    access: text(fd, "access"), published: fd.get("published") === "on", hasFile,
+  });
 }
 
-export async function deleteLessonMaterial(materialId: string): Promise<Res> {
-  const u = await actor();
-  if (isRes(u)) return u;
-  if (!z.uuid().safeParse(materialId).success) return { error: "Material tapılmadı." };
-  const [m] = await db.select({ id: lessonMaterials.id, lessonId: lessonMaterials.lessonId, fileUrl: lessonMaterials.fileUrl }).from(lessonMaterials).where(eq(lessonMaterials.id, materialId)).limit(1);
-  if (!m || !(await ownedLesson(u, m.lessonId))) return { error: "Material tapılmadı." };
-  await db.delete(lessonMaterials).where(and(eq(lessonMaterials.id, materialId)));
-  // Best effort: free the Blob storage too. The row is already gone, so a failure here is harmless.
-  if (process.env.BLOB_READ_WRITE_TOKEN && isOwnBlobUrl(m.fileUrl)) {
+export async function createMaterialAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const area = areaOf(fd.get("area"));
+  let id = "";
+  const r = await run(async () => {
+    const user = await assertPermission("lessons.manage");
+    const fileUrl = text(fd, "fileUrl");
+    const v = parse(fd, !!fileUrl);
+    if (!v.ok) return { fieldErrors: v.fieldErrors, values: values(fd) };
+    const checked = await verifyPdf(fileUrl);
+    if (!checked) return { fieldErrors: { file: "Yüklənən fayl PDF deyil və ya tapılmadı. Yenidən yükləyin." }, values: values(fd) };
     try {
-      const { del } = await import("@vercel/blob");
-      await del(m.fileUrl);
-    } catch {
-      /* ignore */
+      id = await createMaterial(user, v.data, { url: fileUrl, size: checked.size });
+    } catch (e) {
+      return fail(e, fd);
     }
-  }
-  await audit(u.id, "lesson.material.delete", "lesson", m.lessonId);
-  revalidatePath(`/muellim/dersler/${m.lessonId}`);
-  revalidatePath("/dersler");
-  return { ok: true };
+    return { ok: true };
+  });
+  if (!r.ok) return r;
+  revalidatePath("/materiallar");
+  revalidatePath(`/${area}/materiallar`);
+  redirect(`/${area}/materiallar/${id}`);
+}
+
+export async function updateMaterialAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await assertPermission("lessons.manage");
+    const id = text(fd, "id");
+    if (!isUuid(id)) return { error: "Yanlış sorğu." };
+    const newUrl = text(fd, "fileUrl");
+    const v = parse(fd, true); // an existing material always keeps a file
+    if (!v.ok) return { fieldErrors: v.fieldErrors, values: values(fd) };
+    let file: { url: string; size: number | null } | undefined;
+    if (newUrl) {
+      const checked = await verifyPdf(newUrl);
+      if (!checked) return { fieldErrors: { file: "Yüklənən fayl PDF deyil və ya tapılmadı. Yenidən yükləyin." }, values: values(fd) };
+      file = { url: newUrl, size: checked.size };
+    }
+    try {
+      const oldUrl = await updateMaterial(user, id, v.data, file);
+      await removeFile(oldUrl);
+    } catch (e) {
+      return fail(e, fd);
+    }
+    revalidatePath("/materiallar");
+    revalidatePath(`/${areaOf(fd.get("area"))}/materiallar/${id}`);
+    return { ok: true, message: "Dəyişikliklər saxlanıldı." };
+  });
+}
+
+export async function deleteMaterialAction(areaRaw: string, id: string): Promise<{ ok?: boolean; error?: string } | void> {
+  const area = areaOf(areaRaw);
+  const r = await run(async () => {
+    const user = await assertPermission("lessons.manage");
+    if (!isUuid(id)) return { error: "Yanlış sorğu." };
+    try {
+      await removeFile(await deleteMaterial(user, id));
+    } catch (e) {
+      return fail(e);
+    }
+    return { ok: true };
+  });
+  if (!r.ok) return { error: r.error };
+  revalidatePath("/materiallar");
+  revalidatePath(`/${area}/materiallar`);
+  redirect(`/${area}/materiallar`);
 }
