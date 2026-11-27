@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { deleteMaterialAction } from "@/app/actions/materials";
+import { deleteMaterialAction } from "@/app/actions/library-materials";
 import { NoPermission } from "@/components/content/no-permission";
 import { PageHeader } from "@/components/panel/shell";
 import { LinkButton, buttonClasses } from "@/components/ui/button";

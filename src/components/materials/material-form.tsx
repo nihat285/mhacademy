@@ -2,7 +2,7 @@
 
 import { upload } from "@vercel/blob/client";
 import { useState } from "react";
-import { createMaterialAction, updateMaterialAction } from "@/app/actions/materials";
+import { createMaterialAction, updateMaterialAction } from "@/app/actions/library-materials";
 import { CField, CForm, CSelect, CTextArea, FieldError } from "@/components/content/form-kit";
 import { SubmitButton } from "@/components/ui/action-form";
 import { ACCESS_LABEL, GRADES, formatSize } from "@/lib/materials/rules";
